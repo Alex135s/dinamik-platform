@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "noMeu8zcujw=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\gerem\\DinamikPlatform\\services\\DocumentsApi\\DocumentsApi.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\gerem\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.5\\microsoft.aspnetcore.openapi.10.0.5.nupkg.sha512",
+    "C:\\Users\\gerem\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
