@@ -24,20 +24,22 @@ app.MapGet("/api/projects", async () =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        "SELECT id, name, client, service_type, status, start_date, created_at FROM projects ORDER BY created_at DESC", conn);
+    "SELECT id, name, client, service_type, status, start_date, created_at, project_code, whatsapp FROM projects ORDER BY created_at DESC", conn);
     await using var reader = await cmd.ExecuteReaderAsync();
     while (await reader.ReadAsync())
     {
         projects.Add(new
-        {
-            id = reader.GetGuid(0),
-            name = reader.GetString(1),
-            client = reader.IsDBNull(2) ? null : reader.GetString(2),
-            serviceType = reader.IsDBNull(3) ? null : reader.GetString(3),
-            status = reader.IsDBNull(4) ? null : reader.GetString(4),
-            startDate = reader.IsDBNull(5) ? null : reader.GetDateTime(5).ToString("yyyy-MM-dd"),
-            createdAt = reader.GetDateTime(6)
-        });
+{
+    id = reader.GetGuid(0),
+    name = reader.GetString(1),
+    client = reader.IsDBNull(2) ? null : reader.GetString(2),
+    serviceType = reader.IsDBNull(3) ? null : reader.GetString(3),
+    status = reader.IsDBNull(4) ? null : reader.GetString(4),
+    startDate = reader.IsDBNull(5) ? null : reader.GetDateTime(5).ToString("yyyy-MM-dd"),
+    createdAt = reader.GetDateTime(6),
+    projectCode = reader.IsDBNull(7) ? null : reader.GetString(7),
+    whatsapp = reader.IsDBNull(8) ? null : reader.GetString(8)
+});
     }
     return Results.Ok(projects);
 });
@@ -48,7 +50,7 @@ app.MapPost("/api/projects", async (ProjectRequest req) =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        "INSERT INTO projects (name, client, service_type, status, start_date) VALUES (@name, @client, @serviceType, @status, @startDate) RETURNING id", conn);
+    "INSERT INTO projects (name, client, service_type, status, start_date, project_code) VALUES (@name, @client, @serviceType, @status, @startDate, 'DIN-' || UPPER(SUBSTRING(gen_random_uuid()::text, 1, 6))) RETURNING id", conn);
     cmd.Parameters.AddWithValue("name", req.Name);
     cmd.Parameters.AddWithValue("client", req.Client ?? (object)DBNull.Value);
     cmd.Parameters.AddWithValue("serviceType", req.ServiceType ?? (object)DBNull.Value);
