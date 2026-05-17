@@ -1,41 +1,89 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.AspNetCore.Builder;
+using Npgsql;
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
 
 var app = builder.Build();
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseCors();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+string connStr = "Host=localhost;Port=5432;Database=dinamik_db;Username=postgres;Password=1234";
+
+// GET todos los documentos
+app.MapGet("/api/documents", async () =>
 {
-    app.MapOpenApi();
-}
+    var docs = new List<object>();
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        "SELECT id, project_id, name, type, file_url, enabled, uploaded_at FROM documents ORDER BY uploaded_at DESC", conn);
+    await using var reader = await cmd.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        docs.Add(new
+        {
+            id = reader.GetGuid(0),
+            projectId = reader.GetGuid(1),
+            name = reader.GetString(2),
+            type = reader.IsDBNull(3) ? null : reader.GetString(3),
+            fileUrl = reader.IsDBNull(4) ? null : reader.GetString(4),
+            enabled = reader.GetBoolean(5),
+            uploadedAt = reader.GetDateTime(6)
+        });
+    }
+    return Results.Ok(docs);
+});
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+// GET documentos por proyecto
+app.MapGet("/api/documents/project/{projectId}", async (string projectId) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var docs = new List<object>();
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        "SELECT id, project_id, name, type, file_url, enabled, uploaded_at FROM documents WHERE project_id = @projectId ORDER BY uploaded_at DESC", conn);
+    cmd.Parameters.AddWithValue("projectId", Guid.Parse(projectId));
+    await using var reader = await cmd.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        docs.Add(new
+        {
+            id = reader.GetGuid(0),
+            projectId = reader.GetGuid(1),
+            name = reader.GetString(2),
+            type = reader.IsDBNull(3) ? null : reader.GetString(3),
+            fileUrl = reader.IsDBNull(4) ? null : reader.GetString(4),
+            enabled = reader.GetBoolean(5),
+            uploadedAt = reader.GetDateTime(6)
+        });
+    }
+    return Results.Ok(docs);
+});
 
-app.MapGet("/weatherforecast", () =>
+// POST crear documento
+app.MapPost("/api/documents", async (DocumentRequest req) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        "INSERT INTO documents (project_id, name, type, file_url, enabled) VALUES (@projectId, @name, @type, @fileUrl, @enabled) RETURNING id", conn);
+    cmd.Parameters.AddWithValue("projectId", Guid.Parse(req.ProjectId));
+    cmd.Parameters.AddWithValue("name", req.Name);
+    cmd.Parameters.AddWithValue("type", req.Type ?? (object)DBNull.Value);
+    cmd.Parameters.AddWithValue("fileUrl", req.FileUrl ?? (object)DBNull.Value);
+    cmd.Parameters.AddWithValue("enabled", req.Enabled ?? true);
+    var id = await cmd.ExecuteScalarAsync();
+    return Results.Ok(new { id });
+});
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+record DocumentRequest(string ProjectId, string Name, string? Type, string? FileUrl, bool? Enabled);
