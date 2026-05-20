@@ -83,7 +83,20 @@ app.MapPost("/api/documents", async (DocumentRequest req) =>
     var id = await cmd.ExecuteScalarAsync();
     return Results.Ok(new { id });
 });
+// PATCH toggle enabled
+app.MapPatch("/api/documents/{id}/toggle", async (string id, ToggleRequest req) =>
+{
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        "UPDATE documents SET enabled = @enabled WHERE id = @id", conn);
+    cmd.Parameters.AddWithValue("enabled", req.Enabled);
+    cmd.Parameters.AddWithValue("id", Guid.Parse(id));
+    await cmd.ExecuteNonQueryAsync();
+    return Results.Ok(new { success = true });
+});
 
 app.Run();
 
 record DocumentRequest(string ProjectId, string Name, string? Type, string? FileUrl, bool? Enabled);
+record ToggleRequest(bool Enabled);

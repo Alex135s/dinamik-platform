@@ -4,12 +4,14 @@ import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Documents from './pages/Documents'
 import ClientPortal from './pages/ClientPortal'
+import Website from './pages/Website'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/portal" element={<ClientPortal />} />
+        <Route path="/web" element={<Website />} />
         <Route path="/*" element={
           <MainLayout>
             <Routes>

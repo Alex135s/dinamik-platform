@@ -68,6 +68,17 @@ function Documents() {
     )
   }
 
+  const toggleEnabled = async (id, currentEnabled) => {
+    try {
+      await axios.patch(`http://localhost:5034/api/documents/${id}/toggle`, {
+        enabled: !currentEnabled
+      })
+      fetchData()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const getProjectName = (id) => projects.find(p => p.id === id)?.name || 'Sin proyecto'
 
   return (
@@ -139,14 +150,27 @@ function Documents() {
             <div className="flex items-center gap-3">
               <span className="text-2xl">{typeIcons[d.type] || '📎'}</span>
               <div>
-                <p className="text-white text-sm font-medium">{d.name}</p>
+                <p className={`text-sm font-medium ${d.enabled ? 'text-white' : 'text-gray-500'}`}>{d.name}</p>
                 <p className="text-gray-500 text-xs mt-1">{getProjectName(d.projectId)} · {d.type}</p>
               </div>
             </div>
-            <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
-              className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg">
-              Descargar
-            </a>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => toggleEnabled(d.id, d.enabled)}
+                className={`text-xs px-3 py-1 rounded-full font-medium transition-colors
+                  ${d.enabled
+                    ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400'
+                    : 'bg-gray-700 text-gray-400 hover:bg-green-500/20 hover:text-green-400'
+                  }`}>
+                {d.enabled ? 'Habilitado' : 'Deshabilitado'}
+              </button>
+              {d.enabled && (
+                <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
+                  className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg">
+                  Descargar
+                </a>
+              )}
+            </div>
           </div>
         ))}
       </div>
