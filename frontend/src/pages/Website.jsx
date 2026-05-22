@@ -4,6 +4,7 @@ import Hero from '../components/website/Hero'
 import Services from '../components/website/Services'
 import Contact from '../components/website/Contact'
 import About from '../components/website/About'
+import Portfolio from '../components/website/Portfolio'
 
 function Website() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -30,6 +31,7 @@ function Website() {
         onScrollTo={scrollTo}
       />
       <About />
+      <Portfolio />
       <Services onWhatsapp={handleWhatsapp} />
       <Contact onWhatsapp={handleWhatsapp} />
     </div>

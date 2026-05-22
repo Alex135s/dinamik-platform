@@ -21,7 +21,7 @@ function Navbar({ onWhatsapp, onScrollTo, menuOpen, setMenuOpen }) {
       </div>
       {menuOpen && (
         <div className="md:hidden bg-white border-t px-6 py-4 flex flex-col gap-4">
-          {['inicio', 'nosotros', 'servicios', 'contacto'].map(s => (
+          {['inicio', 'nosotros', 'portafolio', 'servicios', 'contacto'].map(s => (
             <button key={s} onClick={() => onScrollTo(s)}
               className="text-gray-600 text-sm font-medium capitalize text-left">
               {s}
