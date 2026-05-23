@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
+import Support from '../components/Support'
 
 const typeIcons = {
   plano_pdf: '📄',
@@ -153,7 +154,7 @@ function ClientPortal() {
     })}
   </div>
 )}
-
+        <Support project={project} />
         {/* Botones de contacto */}
         <div className="grid grid-cols-2 gap-4">
           <button onClick={handleWhatsapp}
