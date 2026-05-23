@@ -44,7 +44,6 @@ function ClientPortal() {
     window.open(`https://wa.me/${number}?text=Hola, soy cliente del proyecto ${project?.name} (${project?.projectCode}). Necesito soporte.`, '_blank')
   }
 
-  // Vista login
   if (!project) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -65,9 +64,7 @@ function ClientPortal() {
               />
             </div>
             {error && <p className="text-red-400 text-xs">{error}</p>}
-            <button
-              onClick={handleLogin}
-              disabled={loading}
+            <button onClick={handleLogin} disabled={loading}
               className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-3 rounded-xl font-medium text-sm">
               {loading ? 'Verificando...' : 'Ingresar'}
             </button>
@@ -80,7 +77,6 @@ function ClientPortal() {
     )
   }
 
-  // Vista del cliente
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
@@ -89,14 +85,14 @@ function ClientPortal() {
           <h1 className="text-white font-bold text-lg">DINAMIK</h1>
           <p className="text-gray-400 text-xs">Portal del Cliente</p>
         </div>
-        <button
-          onClick={() => { setProject(null); setCode(''); setDocs([]) }}
+        <button onClick={() => { setProject(null); setCode(''); setDocs([]) }}
           className="text-gray-400 hover:text-white text-sm">
           Cerrar sesión
         </button>
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10">
+
         {/* Info del proyecto */}
         <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 mb-8">
           <div className="flex items-start justify-between">
@@ -117,46 +113,45 @@ function ClientPortal() {
 
         {/* Entregables */}
         <h3 className="text-white font-semibold mb-4">Entregables disponibles</h3>
-
-{docs.length === 0 ? (
-  <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 text-center mb-8">
-    <p className="text-3xl mb-3">📭</p>
-    <p className="text-gray-400 text-sm">Aún no hay entregables disponibles para este proyecto.</p>
-  </div>
-) : (
-  <div className="mb-8">
-    {['plano_pdf', 'plano_cad', 'imagen_3d', 'informe', 'otro'].map(tipo => {
-      const grupo = docs.filter(d => d.type === tipo)
-      if (grupo.length === 0) return null
-      const labels = {
-        plano_pdf: '📄 Planos PDF',
-        plano_cad: '📐 Planos CAD/DWG',
-        imagen_3d: '🏗️ Imágenes 3D',
-        informe: '📋 Informes Técnicos',
-        otro: '📎 Otros',
-      }
-      return (
-        <div key={tipo} className="mb-6">
-          <p className="text-orange-400 text-xs font-semibold uppercase mb-2">{labels[tipo]}</p>
-          <div className="grid gap-2">
-            {grupo.map(d => (
-              <div key={d.id} className="bg-gray-900 rounded-xl px-5 py-4 border border-gray-800 flex items-center justify-between">
-                <p className="text-white text-sm font-medium">{d.name}</p>
-                <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-4 py-2 rounded-lg">
-                  Descargar
-                </a>
-              </div>
-            ))}
+        {docs.length === 0 ? (
+          <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 text-center mb-8">
+            <p className="text-3xl mb-3">📭</p>
+            <p className="text-gray-400 text-sm">Aún no hay entregables disponibles para este proyecto.</p>
           </div>
-        </div>
-      )
-    })}
-  </div>
-)}
-        <Support project={project} />
+        ) : (
+          <div className="mb-8">
+            {['plano_pdf', 'plano_cad', 'imagen_3d', 'informe', 'otro'].map(tipo => {
+              const grupo = docs.filter(d => d.type === tipo)
+              if (grupo.length === 0) return null
+              const labels = {
+                plano_pdf: '📄 Planos PDF',
+                plano_cad: '📐 Planos CAD/DWG',
+                imagen_3d: '🏗️ Imágenes 3D',
+                informe: '📋 Informes Técnicos',
+                otro: '📎 Otros',
+              }
+              return (
+                <div key={tipo} className="mb-6">
+                  <p className="text-orange-400 text-xs font-semibold uppercase mb-2">{labels[tipo]}</p>
+                  <div className="grid gap-2">
+                    {grupo.map(d => (
+                      <div key={d.id} className="bg-gray-900 rounded-xl px-5 py-4 border border-gray-800 flex items-center justify-between">
+                        <p className="text-white text-sm font-medium">{d.name}</p>
+                        <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
+                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-4 py-2 rounded-lg">
+                          Descargar
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* Botones de contacto */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <button onClick={handleWhatsapp}
             className="bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
             💬 Contactar por WhatsApp
@@ -166,6 +161,33 @@ function ClientPortal() {
             📋 Solicitar Cotización
           </button>
         </div>
+
+        {/* Promoción de servicios */}
+        <div className="mb-8">
+          <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-4">
+            Otros servicios que podrían interesarte
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: '🏗️', title: 'Diseño Estructural', desc: 'Estructuras sismorresistentes optimizadas' },
+              { icon: '📐', title: 'Metodología BIM', desc: 'Coordinación digital antes de construir' },
+              { icon: '📋', title: 'Expedientes Técnicos', desc: 'Licencias y habilitaciones urbanas' },
+              { icon: '🔍', title: 'Estudio de Suelos', desc: 'Geotecnia y topografía de precisión' },
+            ].map((s, i) => (
+              <div key={i} onClick={handleWhatsapp}
+                className="bg-gray-900 rounded-xl p-4 border border-gray-800 hover:border-orange-500 cursor-pointer transition-all group">
+                <span className="text-2xl">{s.icon}</span>
+                <p className="text-white text-xs font-semibold mt-2 group-hover:text-orange-400 transition-colors">{s.title}</p>
+                <p className="text-gray-500 text-xs mt-1">{s.desc}</p>
+                <p className="text-orange-500 text-xs mt-2 font-medium">Solicitar →</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Soporte flotante */}
+        <Support project={project} />
+
       </div>
     </div>
   )
