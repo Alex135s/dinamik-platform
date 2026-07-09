@@ -1,52 +1,106 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import ChatbotAdmin from '../components/ChatbotAdmin'
+import { useSettings } from '../context/SettingsContext'
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: '📊' },
-  { path: '/projects', label: 'Proyectos', icon: '🏗️' },
-  { path: '/documents', label: 'Documentos', icon: '📁' },
+  { path: '/',          label: 'dashboard',  icon: '📊' },
+  { path: '/projects',  label: 'projects',   icon: '🏗️' },
+  { path: '/documents', label: 'documents',  icon: '📁' },
+  { path: '/portfolio-admin', label: 'Galería Web', icon: '🖼️' },
+  { path: '/tracking',  label: 'tracking',   icon: '📈' },
+  { path: '/users',     label: 'users',      icon: '👤' },
+  { path: '/settings',  label: 'settings',   icon: '⚙️' },
 ]
 
-function MainLayout({ children }) {
+function MainLayout({ children, user, onLogout }) {
   const location = useLocation()
+  const { t, theme } = useSettings()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Logo según el tema: blanco para oscuro, negro para claro
+  const logoSrc = theme === 'light' ? '/logo-light.png' : '/logo-dark.png'
+
+  const visibleItems = navItems
+    .filter(item => item.path !== '/users'           || user?.role === 'admin')
+    .filter(item => item.path !== '/portfolio-admin' || user?.role === 'admin')
+    .filter(item => item.path !== '/tracking'        || user?.role === 'admin' || user?.role === 'tecnico')
 
   return (
     <div className="flex min-h-screen bg-gray-950">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+
+      {/* Fondo oscuro al abrir el menú en móvil */}
+      {menuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setMenuOpen(false)} />
+      )}
+
+      {/* Barra lateral (fija en escritorio, deslizable en móvil) */}
+      <aside className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-gray-900 border-r border-gray-800 flex flex-col
+        transform transition-transform duration-200 md:translate-x-0
+        ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
-          <h1 className="text-xl font-bold text-white">DINAMIK</h1>
-          <p className="text-xs text-gray-400 mt-1">Plataforma de Gestión</p>
+        <div className="p-4 border-b border-gray-800">
+          <img src={logoSrc} alt="DINAMIK" className="w-full object-contain" />
+          <p className="text-xs text-gray-400 mt-1 text-center">Plataforma de Gestión</p>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {visibleItems.map(item => (
+            <Link key={item.path} to={item.path}
+              onClick={() => setMenuOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
                 ${location.pathname === item.path
                   ? 'bg-orange-500 text-white'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                }`}
-            >
+                }`}>
               <span>{item.icon}</span>
-              {item.label}
+              {t[item.label] || item.label}
             </Link>
           ))}
         </nav>
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-800">
-          <p className="text-xs text-gray-500">© 2026 Dinamik SAC</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">
+                {user?.name?.charAt(0) || 'U'}
+              </span>
+            </div>
+            <div>
+              <p className="text-white text-xs font-medium">{user?.name}</p>
+              <p className="text-gray-500 text-xs capitalize">{user?.role}</p>
+            </div>
+          </div>
+          {user?.role === 'tecnico' && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-1.5 mb-2">
+              <p className="text-blue-400 text-xs text-center">👷 Modo Técnico</p>
+            </div>
+          )}
+          <button onClick={onLogout}
+            className="w-full text-gray-500 hover:text-red-400 text-xs text-left transition-colors">
+            Cerrar sesión
+          </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 p-8">
-        {children}
-      </main>
+      {/* Columna derecha: barra superior móvil + contenido */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Barra superior solo en móvil (con botón hamburguesa) */}
+        <div className="md:hidden flex items-center gap-3 bg-gray-900 border-b border-gray-800 px-4 py-3 sticky top-0 z-20">
+          <button onClick={() => setMenuOpen(true)}
+            className="text-gray-200 text-2xl leading-none" aria-label="Abrir menú">
+            ☰
+          </button>
+          <img src={logoSrc} alt="DINAMIK" className="h-7 object-contain" />
+        </div>
+
+        <main className="flex-1 p-4 sm:p-6 md:p-8 min-w-0">{children}</main>
+      </div>
+
+      <ChatbotAdmin />
     </div>
   )
 }

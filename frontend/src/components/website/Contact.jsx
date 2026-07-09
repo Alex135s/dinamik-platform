@@ -6,11 +6,11 @@ function Contact({ onWhatsapp }) {
 
   return (
     <>
-      <section id="contacto" className="py-24 bg-gray-950">
+      <section id="contacto" className="py-16 sm:py-24 bg-gray-950">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
             <span className="text-orange-500 text-sm font-semibold uppercase tracking-widest">Hablemos</span>
-            <h2 className="text-4xl font-black text-white mt-3">Contáctanos</h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mt-3">Contáctanos</h2>
             <p className="text-gray-400 mt-4">Cuéntanos tu proyecto y te respondemos a la brevedad.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-12">

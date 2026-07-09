@@ -33,13 +33,13 @@ function About() {
   ]
 
   return (
-    <section id="nosotros" className="py-24 bg-gray-50">
+    <section id="nosotros" className="py-16 sm:py-24 bg-gray-50">
       <div className="max-w-6xl mx-auto px-6">
 
         {/* Título */}
         <div className="text-center mb-16">
           <span className="text-orange-500 text-sm font-semibold uppercase tracking-widest">Quiénes somos</span>
-          <h2 className="text-4xl font-black text-gray-900 mt-3">Sobre Nosotros</h2>
+          <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mt-3">Sobre Nosotros</h2>
           <p className="text-gray-500 mt-4 max-w-2xl mx-auto">
             DINAMIK es una empresa peruana de arquitectura, ingeniería y construcción comprometida
             con la excelencia técnica y la satisfacción de nuestros clientes.
@@ -88,7 +88,7 @@ function About() {
           <h3 className="text-2xl font-black text-gray-900">Nuestro Equipo</h3>
           <p className="text-gray-500 mt-2">Ingenieros y arquitectos comprometidos con la excelencia</p>
         </div>
-        <div className="grid md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {team.map((t, i) => (
             <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all text-center">
               <div className="w-16 h-16 bg-gray-950 rounded-2xl flex items-center justify-center mx-auto mb-4">

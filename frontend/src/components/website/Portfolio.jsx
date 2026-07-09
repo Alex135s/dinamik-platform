@@ -1,92 +1,60 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import axios from 'axios'
 
-const projects = [
-  {
-    title: 'Edificio Residencial San Isidro',
-    category: 'estructural',
-    type: 'Diseño Estructural',
-    location: 'San Isidro, Lima',
-    year: '2025',
-    desc: 'Diseño estructural sismorresistente de edificio multifamiliar de 12 pisos con sótano.',
-    color: 'bg-orange-500',
-    icon: '🏢'
-  },
-  {
-    title: 'Habilitación Urbana Surco',
-    category: 'viabilidad',
-    type: 'Viabilidad y Licencias',
-    location: 'Santiago de Surco, Lima',
-    year: '2025',
-    desc: 'Gestión completa de habilitación urbana incluyendo expedientes técnicos y licencias municipales.',
-    color: 'bg-blue-600',
-    icon: '🗺️'
-  },
-  {
-    title: 'Estudio de Suelos Miraflores',
-    category: 'topografia',
-    type: 'Topografía y Geotecnia',
-    location: 'Miraflores, Lima',
-    year: '2024',
-    desc: 'Estudio completo de mecánica de suelos con calicatas, ensayos de laboratorio y cálculo de capacidad portante.',
-    color: 'bg-yellow-600',
-    icon: '🔍'
-  },
-  {
-    title: 'Centro Comercial BIM',
-    category: 'bim',
-    type: 'Metodología BIM',
-    location: 'Jesús María, Lima',
-    year: '2025',
-    desc: 'Modelado BIM completo de centro comercial de 3 niveles con detección de interferencias y coordinación multidisciplinaria.',
-    color: 'bg-green-600',
-    icon: '📐'
-  },
-  {
-    title: 'Remodelación Casa Jesús María',
-    category: 'construccion',
-    type: 'Construcción y Control',
-    location: 'Jesús María, Lima',
-    year: '2024',
-    desc: 'Remodelación integral de vivienda unifamiliar con reforzamiento estructural y acabados de alta calidad.',
-    color: 'bg-red-600',
-    icon: '🏠'
-  },
-  {
-    title: 'Supervisión Edificio Lince',
-    category: 'supervision',
-    type: 'Supervisión de Obras',
-    location: 'Lince, Lima',
-    year: '2024',
-    desc: 'Supervisión técnica de obra de edificio de 8 pisos con control de calidad, costos y plazos.',
-    color: 'bg-purple-600',
-    icon: '👁️'
-  },
-]
+const GALLERY_API = 'http://localhost:5034'
 
 const categories = [
-  { key: 'todos', label: 'Todos' },
-  { key: 'estructural', label: 'Estructural' },
-  { key: 'bim', label: 'BIM' },
-  { key: 'viabilidad', label: 'Viabilidad' },
-  { key: 'topografia', label: 'Topografía' },
-  { key: 'construccion', label: 'Construcción' },
-  { key: 'supervision', label: 'Supervisión' },
+  { key: 'todos',                label: 'Todos' },
+  { key: 'estructuras_metalicas', label: 'Estructuras metálicas' },
+  { key: 'cielo_raso',           label: 'Cielo raso / Drywall' },
+  { key: 'policarbonato',        label: 'Policarbonato / Coberturas' },
+  { key: 'obra_civil',           label: 'Obra civil / Concreto' },
 ]
 
-function Portfolio() {
-  const [active, setActive] = useState('todos')
+const categoryLabels = {
+  estructuras_metalicas: 'Estructuras metálicas',
+  cielo_raso:            'Cielo raso / Drywall',
+  policarbonato:         'Policarbonato / Coberturas',
+  obra_civil:            'Obra civil / Concreto',
+}
 
-  const filtered = active === 'todos'
-    ? projects
-    : projects.filter(p => p.category === active)
+function Portfolio() {
+  const [active, setActive]   = useState('todos')
+  const [photos, setPhotos]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [openAlbum, setOpenAlbum] = useState(null) // álbum abierto en galería
+  const [zoomPhoto, setZoomPhoto] = useState(null)  // foto individual ampliada
+
+  useEffect(() => {
+    axios.get(`${GALLERY_API}/api/gallery/public`)
+      .then(res => setPhotos(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setPhotos([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  // Agrupa las fotos por título -> cada título es un álbum (una tarjeta)
+  const albums = useMemo(() => {
+    const visibles = active === 'todos'
+      ? photos
+      : photos.filter(p => p.category === active)
+
+    const mapa = new Map()
+    for (const p of visibles) {
+      if (!mapa.has(p.title)) {
+        mapa.set(p.title, { title: p.title, category: p.category, photos: [] })
+      }
+      mapa.get(p.title).photos.push(p)
+    }
+    return Array.from(mapa.values())
+  }, [photos, active])
 
   return (
-    <section id="portafolio" className="py-24 bg-white">
+    <section id="portafolio" className="py-16 sm:py-24 bg-white">
       <div className="max-w-6xl mx-auto px-6">
 
         <div className="text-center mb-12">
           <span className="text-orange-500 text-sm font-semibold uppercase tracking-widest">Nuestro trabajo</span>
-          <h2 className="text-4xl font-black text-gray-900 mt-3">Portafolio</h2>
+          <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mt-3">Portafolio</h2>
           <p className="text-gray-500 mt-4 max-w-xl mx-auto">
             Proyectos que demuestran nuestra experiencia y compromiso con la excelencia.
           </p>
@@ -106,27 +74,83 @@ function Portfolio() {
           ))}
         </div>
 
-        {/* Grid proyectos */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {filtered.map((p, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden group">
-              <div className={`${p.color} h-40 flex items-center justify-center relative`}>
-                <span className="text-7xl opacity-30">{p.icon}</span>
-                <div className="absolute top-3 right-3 bg-white/20 backdrop-blur px-3 py-1 rounded-full">
-                  <span className="text-white text-xs font-medium">{p.year}</span>
+        {/* Estados */}
+        {loading ? (
+          <p className="text-center text-gray-400 text-sm">Cargando proyectos...</p>
+        ) : albums.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-5xl mb-3">📷</p>
+            <p className="text-gray-400 text-sm">
+              {photos.length === 0
+                ? 'Aún no hay fotos en el portafolio.'
+                : 'No hay proyectos en esta categoría.'}
+            </p>
+          </div>
+        ) : (
+          /* Grid de álbumes (una tarjeta por título) */
+          <div className="grid md:grid-cols-3 gap-6">
+            {albums.map(album => (
+              <button key={album.title} onClick={() => setOpenAlbum(album)}
+                className="bg-white rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden group text-left">
+                <div className="relative h-52 overflow-hidden bg-gray-100">
+                  <img src={album.photos[0].imageUrl} alt={album.title}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  {/* Contador de fotos */}
+                  <span className="absolute top-3 right-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
+                    🖼️ {album.photos.length} {album.photos.length === 1 ? 'foto' : 'fotos'}
+                  </span>
                 </div>
-              </div>
-              <div className="p-5">
-                <span className="text-orange-500 text-xs font-semibold">{p.type}</span>
-                <h3 className="text-gray-900 font-bold text-base mt-1">{p.title}</h3>
-                <p className="text-gray-400 text-xs mt-1">📍 {p.location}</p>
-                <p className="text-gray-500 text-sm mt-3 leading-relaxed">{p.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
+                <div className="p-5">
+                  <span className="text-orange-500 text-xs font-semibold">
+                    {categoryLabels[album.category] || album.category}
+                  </span>
+                  <h3 className="text-gray-900 font-bold text-base mt-1">{album.title}</h3>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Galería del álbum: muestra todas las fotos del título */}
+      {openAlbum && (
+        <div className="fixed inset-0 bg-black/80 z-50 overflow-y-auto p-4"
+          onClick={() => setOpenAlbum(null)}>
+          <div className="max-w-5xl mx-auto my-8" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-white text-xl font-bold">{openAlbum.title}</h3>
+                <p className="text-orange-400 text-sm">
+                  {categoryLabels[openAlbum.category] || openAlbum.category} · {openAlbum.photos.length} fotos
+                </p>
+              </div>
+              <button onClick={() => setOpenAlbum(null)}
+                className="text-white hover:text-orange-400 text-3xl px-2">✕</button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {openAlbum.photos.map(p => (
+                <button key={p.id} onClick={() => setZoomPhoto(p.imageUrl)}
+                  className="aspect-square overflow-hidden rounded-xl bg-gray-800 group">
+                  <img src={p.imageUrl} alt={p.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Foto individual ampliada */}
+      {zoomPhoto && (
+        <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4"
+          onClick={() => setZoomPhoto(null)}>
+          <button onClick={() => setZoomPhoto(null)}
+            className="absolute top-4 right-6 text-white hover:text-orange-400 text-4xl">✕</button>
+          <img src={zoomPhoto} alt="" className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={e => e.stopPropagation()} />
+        </div>
+      )}
     </section>
   )
 }

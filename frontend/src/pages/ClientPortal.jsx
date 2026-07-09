@@ -1,21 +1,25 @@
 import { useState } from 'react'
 import axios from 'axios'
-import Support from '../components/Support'
-
-const typeIcons = {
-  plano_pdf: '📄',
-  plano_cad: '📐',
-  imagen_3d: '🏗️',
-  informe: '📋',
-  otro: '📎',
-}
+import Chatbot from '../components/Chatbot'
+import PDFViewerProtected from '../components/PDFViewerProtected'
+import { isPDF } from '../components/portal/portalData'
+import ProjectHero from '../components/portal/ProjectHero'
+import StatsRow from '../components/portal/StatsRow'
+import Timeline from '../components/portal/Timeline'
+import Deliverables from '../components/portal/Deliverables'
+import ServicesGrid from '../components/portal/ServicesGrid'
+import Sidebar from '../components/portal/Sidebar'
 
 function ClientPortal() {
-  const [code, setCode] = useState('')
-  const [project, setProject] = useState(null)
-  const [docs, setDocs] = useState([])
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [code, setCode]             = useState('')
+  const [project, setProject]       = useState(null)
+  const [docs, setDocs]             = useState([])
+  const [allDocs, setAllDocs]       = useState([])
+  const [tasks, setTasks]           = useState([])
+  const [error, setError]           = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [pdfViewer, setPdfViewer]   = useState(null)
+  const [previewImg, setPreviewImg] = useState(null)
 
   const handleLogin = async () => {
     if (!code.trim()) return
@@ -23,16 +27,23 @@ function ClientPortal() {
     setError('')
     try {
       const res = await axios.get('http://localhost:5210/api/projects')
-      const found = res.data.find(p => p.projectCode?.toUpperCase() === code.toUpperCase().trim())
+      const found = res.data.find(
+        p => p.projectCode?.toUpperCase() === code.toUpperCase().trim()
+      )
       if (!found) {
         setError('Código de proyecto no válido. Verifique e intente nuevamente.')
         setLoading(false)
         return
       }
       setProject(found)
-      const docsRes = await axios.get(`http://localhost:5034/api/documents/project/${found.id}`)
+      const [docsRes, tasksRes] = await Promise.all([
+        axios.get(`http://localhost:5034/api/documents/project/${found.id}`),
+        axios.get(`http://localhost:5210/api/tasks/${found.id}`).catch(() => ({ data: [] })),
+      ])
       setDocs(docsRes.data.filter(d => d.enabled))
-    } catch (err) {
+      setAllDocs(docsRes.data)
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : [])
+    } catch {
       setError('Error al conectar. Intente nuevamente.')
     } finally {
       setLoading(false)
@@ -41,35 +52,43 @@ function ClientPortal() {
 
   const handleWhatsapp = () => {
     const number = project?.whatsapp?.replace(/\D/g, '') || '51962744341'
-    window.open(`https://wa.me/${number}?text=Hola, soy cliente del proyecto ${project?.name} (${project?.projectCode}). Necesito soporte.`, '_blank')
+    window.open(
+      `https://wa.me/${number}?text=Hola, soy cliente del proyecto ${project?.name} (${project?.projectCode}). Necesito soporte.`,
+      '_blank'
+    )
   }
 
+  const handleLogout = () => {
+    setProject(null); setCode(''); setDocs([]); setAllDocs([]); setTasks([])
+  }
+
+  // ── Pantalla de ingreso ──────────────────────────────
   if (!project) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="bg-gray-900 rounded-2xl p-10 border border-gray-800 w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl shadow-orange-500/5 w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white">DINAMIK</h1>
-            <p className="text-gray-400 text-sm mt-2">Portal del Cliente</p>
+            <img src="/logo-light.png" alt="DINAMIK" className="w-48 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Portal del Cliente</p>
           </div>
           <div className="space-y-4">
             <div>
-              <label className="text-gray-400 text-sm block mb-2">Código de Proyecto</label>
+              <label className="text-gray-600 text-sm block mb-2 font-medium">Código de Proyecto</label>
               <input
                 placeholder="Ej: DIN-3AAC68"
                 value={code}
                 onChange={e => setCode(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 text-sm border border-gray-700 focus:border-orange-500 focus:outline-none"
+                className="w-full bg-gray-50 text-gray-900 rounded-xl px-4 py-3 text-sm border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
               />
             </div>
-            {error && <p className="text-red-400 text-xs">{error}</p>}
+            {error && <p className="text-red-500 text-xs">{error}</p>}
             <button onClick={handleLogin} disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-3 rounded-xl font-medium text-sm">
-              {loading ? 'Verificando...' : 'Ingresar'}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/25 transition">
+              {loading ? 'Verificando...' : 'Ingresar al Portal'}
             </button>
           </div>
-          <p className="text-gray-600 text-xs text-center mt-6">
+          <p className="text-gray-400 text-xs text-center mt-6">
             ¿No tienes tu código? Contáctanos al +51 962 744 341
           </p>
         </div>
@@ -77,118 +96,89 @@ function ClientPortal() {
     )
   }
 
+  const docsDeshabilitados = allDocs.filter(d => !d.enabled && isPDF(d.type))
+
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-8 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-white font-bold text-lg">DINAMIK</h1>
-          <p className="text-gray-400 text-xs">Portal del Cliente</p>
+      <div className="bg-white/90 backdrop-blur border-b border-gray-100 px-6 sm:px-10 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <img src="/logo-light.png" alt="DINAMIK" className="h-9 w-auto object-contain" />
+          <div className="hidden sm:block border-l border-gray-200 pl-3">
+            <p className="text-gray-400 text-xs">Portal del Cliente</p>
+          </div>
         </div>
-        <button onClick={() => { setProject(null); setCode(''); setDocs([]) }}
-          className="text-gray-400 hover:text-white text-sm">
+        <button onClick={handleLogout}
+          className="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
           Cerrar sesión
         </button>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 py-10">
 
-        {/* Info del proyecto */}
-        <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 mb-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-orange-500 text-xs font-semibold">{project.projectCode}</span>
-              <h2 className="text-white text-xl font-bold mt-1">{project.name}</h2>
-              <p className="text-gray-400 text-sm mt-1">{project.client}</p>
-              <p className="text-gray-500 text-xs mt-2">Tipo: {project.serviceType} · Inicio: {project.startDate}</p>
-            </div>
-            <span className={`text-xs px-3 py-1 rounded-full font-medium
-              ${project.status === 'activo' ? 'bg-green-500/20 text-green-400' :
-                project.status === 'en_proceso' ? 'bg-yellow-500/20 text-yellow-400' :
-                'bg-blue-500/20 text-blue-400'}`}>
-              {project.status}
-            </span>
-          </div>
-        </div>
-
-        {/* Entregables */}
-        <h3 className="text-white font-semibold mb-4">Entregables disponibles</h3>
-        {docs.length === 0 ? (
-          <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 text-center mb-8">
-            <p className="text-3xl mb-3">📭</p>
-            <p className="text-gray-400 text-sm">Aún no hay entregables disponibles para este proyecto.</p>
-          </div>
-        ) : (
-          <div className="mb-8">
-            {['plano_pdf', 'plano_cad', 'imagen_3d', 'informe', 'otro'].map(tipo => {
-              const grupo = docs.filter(d => d.type === tipo)
-              if (grupo.length === 0) return null
-              const labels = {
-                plano_pdf: '📄 Planos PDF',
-                plano_cad: '📐 Planos CAD/DWG',
-                imagen_3d: '🏗️ Imágenes 3D',
-                informe: '📋 Informes Técnicos',
-                otro: '📎 Otros',
-              }
-              return (
-                <div key={tipo} className="mb-6">
-                  <p className="text-orange-400 text-xs font-semibold uppercase mb-2">{labels[tipo]}</p>
-                  <div className="grid gap-2">
-                    {grupo.map(d => (
-                      <div key={d.id} className="bg-gray-900 rounded-xl px-5 py-4 border border-gray-800 flex items-center justify-between">
-                        <p className="text-white text-sm font-medium">{d.name}</p>
-                        <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
-                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-4 py-2 rounded-lg">
-                          Descargar
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Botones de contacto */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <button onClick={handleWhatsapp}
-            className="bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
-            💬 Contactar por WhatsApp
-          </button>
-          <button onClick={handleWhatsapp}
-            className="bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
-            📋 Solicitar Cotización
-          </button>
-        </div>
-
-        {/* Promoción de servicios */}
-        <div className="mb-8">
-          <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-4">
-            Otros servicios que podrían interesarte
+        {/* Bienvenida */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900">
+            Hola, {project.client} 👋
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Bienvenido al portal de seguimiento de tu proyecto.
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: '🏗️', title: 'Diseño Estructural', desc: 'Estructuras sismorresistentes optimizadas' },
-              { icon: '📐', title: 'Metodología BIM', desc: 'Coordinación digital antes de construir' },
-              { icon: '📋', title: 'Expedientes Técnicos', desc: 'Licencias y habilitaciones urbanas' },
-              { icon: '🔍', title: 'Estudio de Suelos', desc: 'Geotecnia y topografía de precisión' },
-            ].map((s, i) => (
-              <div key={i} onClick={handleWhatsapp}
-                className="bg-gray-900 rounded-xl p-4 border border-gray-800 hover:border-orange-500 cursor-pointer transition-all group">
-                <span className="text-2xl">{s.icon}</span>
-                <p className="text-white text-xs font-semibold mt-2 group-hover:text-orange-400 transition-colors">{s.title}</p>
-                <p className="text-gray-500 text-xs mt-1">{s.desc}</p>
-                <p className="text-orange-500 text-xs mt-2 font-medium">Solicitar →</p>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Soporte flotante */}
-        <Support project={project} />
+        {/* Layout 2 columnas (responsive) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+          {/* Columna principal */}
+          <div className="lg:col-span-2 space-y-6">
+            <ProjectHero project={project} />
+            <StatsRow project={project} docsCount={docs.length} tasks={tasks} />
+            <Timeline tasks={tasks} />
+            <Deliverables
+              docs={docs}
+              docsDeshabilitados={docsDeshabilitados}
+              onPdf={setPdfViewer}
+              onImg={setPreviewImg}
+            />
+            <ServicesGrid onRequest={handleWhatsapp} />
+          </div>
+
+          {/* Barra lateral */}
+          <div className="lg:col-span-1">
+            <Sidebar docs={docs} tasks={tasks} onWhatsapp={handleWhatsapp} />
+          </div>
+        </div>
       </div>
+
+      <Chatbot placeholder="¿Cómo va mi proyecto?" isPortal={true} />
+
+      {/* Modal PDF Protegido */}
+      {pdfViewer && (
+        <PDFViewerProtected
+          url={pdfViewer.fileUrl}
+          name={pdfViewer.name}
+          clientName={project.client}
+          projectCode={project.projectCode}
+          onClose={() => setPdfViewer(null)}
+        />
+      )}
+
+      {/* Modal imagen */}
+      {previewImg && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setPreviewImg(null)}>
+          <div className="bg-white rounded-2xl p-4 max-w-3xl w-full border border-gray-200 shadow-2xl"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-gray-900 font-semibold">{previewImg.name}</p>
+              <button onClick={() => setPreviewImg(null)}
+                className="text-gray-400 hover:text-gray-900 text-xl px-2">✕</button>
+            </div>
+            <img src={previewImg.fileUrl} alt={previewImg.name}
+              className="w-full rounded-lg object-contain max-h-[70vh]" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

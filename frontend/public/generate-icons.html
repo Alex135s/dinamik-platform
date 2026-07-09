@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvasId, size) {
+  const canvas = document.getElementById(canvasId)
+  const ctx = canvas.getContext('2d')
+  // Fondo naranja
+  ctx.fillStyle = '#f97316'
+  ctx.fillRect(0, 0, size, size)
+  // Letra D
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `bold ${size * 0.6}px Arial`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('D', size / 2, size / 2)
+  // Descargar
+  const link = document.createElement('a')
+  link.download = `icon-${size}.png`
+  link.href = canvas.toDataURL()
+  link.click()
+}
+drawIcon('c192', 192)
+setTimeout(() => drawIcon('c512', 512), 500)
+</script>
+</body>
+</html>
