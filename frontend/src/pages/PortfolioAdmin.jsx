@@ -4,7 +4,7 @@ import { storage } from '../firebase'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
 
-const GALLERY_API = 'http://localhost:5034'
+const GALLERY_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''
 
 const CATEGORIES = [
   { key: 'estructuras_metalicas', label: 'Estructuras metálicas', icon: '🏗️' },

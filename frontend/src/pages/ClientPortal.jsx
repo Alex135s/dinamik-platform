@@ -26,7 +26,7 @@ function ClientPortal() {
     setLoading(true)
     setError('')
     try {
-      const res = await axios.get('http://localhost:5210/api/projects')
+      const res = await axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects')
       const found = res.data.find(
         p => p.projectCode?.toUpperCase() === code.toUpperCase().trim()
       )
@@ -37,8 +37,8 @@ function ClientPortal() {
       }
       setProject(found)
       const [docsRes, tasksRes] = await Promise.all([
-        axios.get(`http://localhost:5034/api/documents/project/${found.id}`),
-        axios.get(`http://localhost:5210/api/tasks/${found.id}`).catch(() => ({ data: [] })),
+        axios.get(`' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents/project/${found.id}`),
+        axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${found.id}`).catch(() => ({ data: [] })),
       ])
       setDocs(docsRes.data.filter(d => d.enabled))
       setAllDocs(docsRes.data)

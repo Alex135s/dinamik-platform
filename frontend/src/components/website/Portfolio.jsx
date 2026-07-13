@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 
-const GALLERY_API = 'http://localhost:5034'
+const GALLERY_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''
 
 const categories = [
   { key: 'todos',                label: 'Todos' },

@@ -25,15 +25,15 @@ function Dashboard() {
   const [tasks, setTasks]       = useState([])
 
   useEffect(() => {
-    axios.get('http://localhost:5210/api/projects').then(res => setProjects(res.data))
-    axios.get('http://localhost:5034/api/documents').then(res => setDocs(res.data))
+    axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects').then(res => setProjects(res.data))
+    axios.get('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents').then(res => setDocs(res.data))
   }, [])
 
   // Cargar tareas de todos los proyectos
   useEffect(() => {
     if (projects.length === 0) return
     Promise.all(
-      projects.map(p => axios.get(`http://localhost:5210/api/tasks/${p.id}`))
+      projects.map(p => axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${p.id}`))
     ).then(results => {
       setTasks(results.flatMap(r => r.data))
     }).catch(() => {})

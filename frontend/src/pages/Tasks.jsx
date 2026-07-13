@@ -45,9 +45,9 @@ function Tasks() {
   const fetchData = async () => {
     try {
       const [projRes, tasksRes, usersRes] = await Promise.all([
-        axios.get('http://localhost:5210/api/projects'),
-        axios.get(`http://localhost:5210/api/tasks/${projectId}`),
-        axios.get('http://localhost:5210/api/users'),
+        axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects'),
+        axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${projectId}`),
+        axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/users'),
       ])
       const found = projRes.data.find(p => p.id === projectId)
       setProject(found || null)
@@ -89,7 +89,7 @@ function Tasks() {
     }
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5210/api/tasks/${editingId}`, {
+        await axios.put(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${editingId}`, {
           projectId,
           title:       form.title,
           description: form.description || null,
@@ -100,7 +100,7 @@ function Tasks() {
         })
         showToast('Tarea actualizada correctamente.', 'success')
       } else {
-        await axios.post('http://localhost:5210/api/tasks', {
+        await axios.post('' + import.meta.env.VITE_PROJECTS_API + '/api/tasks', {
           projectId,
           title:       form.title,
           description: form.description || null,
@@ -122,7 +122,7 @@ function Tasks() {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await axios.patch(`http://localhost:5210/api/tasks/${id}/status`, { status: newStatus })
+      await axios.patch(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${id}/status`, { status: newStatus })
       fetchData()
     } catch {
       showToast('Error al actualizar el estado.', 'error')
@@ -133,7 +133,7 @@ function Tasks() {
     if (!confirm(`¿Eliminar tarea "${title}"?`)) return
     setDeletingId(id)
     try {
-      await axios.delete(`http://localhost:5210/api/tasks/${id}`)
+      await axios.delete(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${id}`)
       showToast('Tarea eliminada.', 'success')
       fetchData()
     } catch {

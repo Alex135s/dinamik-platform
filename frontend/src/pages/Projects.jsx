@@ -65,8 +65,8 @@ function Projects() {
   const fetchData = async () => {
     try {
       const [projRes, usersRes] = await Promise.all([
-        axios.get('http://localhost:5210/api/projects'),
-        axios.get('http://localhost:5210/api/users'),
+        axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects'),
+        axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/users'),
       ])
       setProjects(projRes.data)
       setUsers(usersRes.data.filter(u => u.role === 'tecnico'))
@@ -143,10 +143,10 @@ function Projects() {
         longitude: form.longitude ? parseFloat(form.longitude) : null,
       }
       if (editingId) {
-        await axios.put(`http://localhost:5210/api/projects/${editingId}`, payload)
+        await axios.put(`' + import.meta.env.VITE_PROJECTS_API + '/api/projects/${editingId}`, payload)
         showToast('Proyecto actualizado correctamente.', 'success')
       } else {
-        await axios.post('http://localhost:5210/api/projects', payload)
+        await axios.post('' + import.meta.env.VITE_PROJECTS_API + '/api/projects', payload)
         showToast('Proyecto creado correctamente.', 'success')
       }
       setForm(emptyForm); setEditingId(null); setShowForm(false); fetchData()
@@ -157,7 +157,7 @@ function Projects() {
     if (!confirm(`¿Eliminar "${name}"?`)) return
     setDeletingId(id)
     try {
-      await axios.delete(`http://localhost:5210/api/projects/${id}`)
+      await axios.delete(`' + import.meta.env.VITE_PROJECTS_API + '/api/projects/${id}`)
       showToast(`Proyecto "${name}" eliminado.`, 'success')
       fetchData()
     } catch { showToast('Error al eliminar el proyecto.', 'error') }

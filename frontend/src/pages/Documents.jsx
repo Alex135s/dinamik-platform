@@ -51,8 +51,8 @@ function Documents() {
 
   const fetchData = async () => {
     const [p, d] = await Promise.all([
-      axios.get('http://localhost:5210/api/projects'),
-      axios.get('http://localhost:5034/api/documents')
+      axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects'),
+      axios.get('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents')
     ])
     setProjects(p.data)
     setDocs(d.data)
@@ -96,7 +96,7 @@ function Documents() {
       },
       async () => {
         const fileUrl = await getDownloadURL(uploadTask.snapshot.ref)
-        await axios.post('http://localhost:5034/api/documents', {
+        await axios.post('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents', {
           projectId: form.projectId,
           name: form.name, type: form.type, fileUrl, enabled: true
         })
@@ -131,7 +131,7 @@ function Documents() {
               const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })
               const hora  = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
               const nombre = `Foto ${fecha} ${hora}` + (arr.length > 1 ? ` (${i + 1})` : '')
-              await axios.post('http://localhost:5034/api/documents', {
+              await axios.post('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents', {
                 projectId: selectedProject.id, name: nombre, type: 'foto', fileUrl, enabled: true
               })
               resolve()
@@ -150,7 +150,7 @@ function Documents() {
 
   const toggleEnabled = async (id, currentEnabled) => {
     try {
-      await axios.patch(`http://localhost:5034/api/documents/${id}/toggle`, { enabled: !currentEnabled })
+      await axios.patch(`' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents/${id}/toggle`, { enabled: !currentEnabled })
       fetchData()
     } catch {
       showToast('Error al cambiar el estado.', 'error')
@@ -161,7 +161,7 @@ function Documents() {
     if (!confirm(`¿Eliminar "${name}"?`)) return
     setDeletingId(id)
     try {
-      await axios.delete(`http://localhost:5034/api/documents/${id}`)
+      await axios.delete(`' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents/${id}`)
       showToast('Documento eliminado.', 'success')
       fetchData()
     } catch {

@@ -1,4 +1,4 @@
-@ProjectsApi_HostAddress = http://localhost:5210
+@ProjectsApi_HostAddress = ' + import.meta.env.VITE_PROJECTS_API + '
 
 GET {{ProjectsApi_HostAddress}}/weatherforecast/
 Accept: application/json

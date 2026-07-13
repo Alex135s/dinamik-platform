@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
-const CHAT_API = 'http://localhost:5210'
+const CHAT_API = '' + import.meta.env.VITE_PROJECTS_API + ''
 
 const QUICK_QUESTIONS = [
   '¿Cómo va mi proyecto?',

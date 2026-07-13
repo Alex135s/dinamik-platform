@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
 
-const API = 'http://localhost:5210'        // ProjectsApi
-const DOCS_API = 'http://localhost:5034'    // DocumentsApi
+const API = '' + import.meta.env.VITE_PROJECTS_API + ''        // ProjectsApi
+const DOCS_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''    // DocumentsApi
 
 const statusColors = {
   activo:     { bg: 'bg-green-500/20',  text: 'text-green-400'  },

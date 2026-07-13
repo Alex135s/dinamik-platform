@@ -23,7 +23,7 @@ function Users() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:5210/api/users')
+      const res = await axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/users')
       setUsers(res.data)
     } catch {
       showToast('Error al cargar los usuarios.', 'error')
@@ -52,7 +52,7 @@ function Users() {
       return
     }
     try {
-      await axios.post('http://localhost:5210/api/users', form)
+      await axios.post('' + import.meta.env.VITE_PROJECTS_API + '/api/users', form)
       showToast(`Usuario "${form.name}" creado correctamente.`, 'success')
       setForm(emptyForm)
       setShowForm(false)
@@ -67,7 +67,7 @@ function Users() {
     const newRole = currentRole === 'admin' ? 'tecnico' : 'admin'
     if (!window.confirm(`¿Cambiar rol de "${name}" a ${newRole}?`)) return
     try {
-      await axios.patch(`http://localhost:5210/api/users/${id}/role`, { role: newRole })
+      await axios.patch(`' + import.meta.env.VITE_PROJECTS_API + '/api/users/${id}/role`, { role: newRole })
       showToast(`Rol de "${name}" cambiado a ${newRole}.`, 'success')
       fetchUsers()
     } catch {
@@ -83,7 +83,7 @@ function Users() {
     if (!window.confirm(`¿Eliminar usuario "${name}"? Esta acción no se puede deshacer.`)) return
     setDeletingId(id)
     try {
-      await axios.delete(`http://localhost:5210/api/users/${id}`)
+      await axios.delete(`' + import.meta.env.VITE_PROJECTS_API + '/api/users/${id}`)
       showToast(`Usuario "${name}" eliminado.`, 'success')
       fetchUsers()
     } catch {

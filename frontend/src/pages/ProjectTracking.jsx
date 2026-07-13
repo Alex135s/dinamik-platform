@@ -42,7 +42,7 @@ function ProjectTracking() {
   const [filterHealth, setFilterHealth] = useState('todos')
 
   useEffect(() => {
-    axios.get('http://localhost:5210/api/projects').then(async res => {
+    axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects').then(async res => {
       // El técnico solo ve SUS proyectos asignados; el admin ve todos
       const visibles = perms.isAdmin
         ? res.data
@@ -51,7 +51,7 @@ function ProjectTracking() {
       const taskMap = {}
       await Promise.all(
         visibles.map(p =>
-          axios.get(`http://localhost:5210/api/tasks/${p.id}`)
+          axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${p.id}`)
             .then(r => { taskMap[p.id] = r.data })
             .catch(() => { taskMap[p.id] = [] })
         )
