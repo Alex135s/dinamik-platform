@@ -2,6 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Puerto: en la nube (Render) se toma de la variable PORT; en local se usa el de siempre.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
@@ -15,7 +20,17 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();
 
-string connStr = "Host=localhost;Port=5432;Database=dinamik_db;Username=postgres;Password=1234";
+// Conexión a la BD: en la nube viene de DATABASE_URL (Supabase); en local usa PostgreSQL local.
+string connStr = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? "Host=localhost;Port=5432;Database=dinamik_db;Username=postgres;Password=1234";
+// Si DATABASE_URL viene como URL de Supabase (postgresql://...), la pasamos al formato de Npgsql.
+if (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://"))
+{
+    var uri = new Uri(connStr);
+    var creds = uri.UserInfo.Split(':');
+    connStr = $"Host={uri.Host};Port={(uri.Port > 0 ? uri.Port : 5432)};Database={uri.AbsolutePath.TrimStart('/')};" +
+              $"Username={creds[0]};Password={Uri.UnescapeDataString(creds[1])};SSL Mode=Require;Trust Server Certificate=true";
+}
 
 // GET todos los documentos
 app.MapGet("/api/documents", async () =>

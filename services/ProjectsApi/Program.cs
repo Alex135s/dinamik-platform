@@ -8,6 +8,11 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Puerto: en la nube (Render) se toma de la variable PORT; en local se usa el de siempre.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
@@ -21,7 +26,17 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();
 
-string connStr = "Host=localhost;Port=5432;Database=dinamik_db;Username=postgres;Password=1234";
+// Conexión a la BD: en la nube viene de DATABASE_URL (Supabase); en local usa PostgreSQL local.
+string connStr = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? "Host=localhost;Port=5432;Database=dinamik_db;Username=postgres;Password=1234";
+// Si DATABASE_URL viene como URL de Supabase (postgresql://...), la pasamos al formato de Npgsql.
+if (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://"))
+{
+    var uri = new Uri(connStr);
+    var creds = uri.UserInfo.Split(':');
+    connStr = $"Host={uri.Host};Port={(uri.Port > 0 ? uri.Port : 5432)};Database={uri.AbsolutePath.TrimStart('/')};" +
+              $"Username={creds[0]};Password={Uri.UnescapeDataString(creds[1])};SSL Mode=Require;Trust Server Certificate=true";
+}
 string jwtKey  = "DinamikPlatform2026ClaveSecreta!!";
 
 string GenerarToken(string id, string name, string email, string role)
@@ -498,15 +513,99 @@ async Task<string> ConstruirContexto(string cs)
     return sb.ToString();
 }
 
+// Contexto de UN solo proyecto (para el cliente identificado por su código)
+async Task<string> ConstruirContextoCliente(string cs, string code)
+{
+    var sb = new StringBuilder();
+    await using var conn = new NpgsqlConnection(cs);
+    await conn.OpenAsync();
+
+    Guid? projId = null;
+    await using (var cmd = new NpgsqlCommand(
+        @"SELECT id, name, project_code, client, service_type, status, start_date, end_date, progress
+          FROM projects WHERE UPPER(project_code) = UPPER(@code) LIMIT 1", conn))
+    {
+        cmd.Parameters.AddWithValue("code", code);
+        await using var r = await cmd.ExecuteReaderAsync();
+        if (await r.ReadAsync())
+        {
+            projId      = r.GetGuid(0);
+            var name    = r.GetString(1);
+            var pcode   = r.IsDBNull(2) ? "" : r.GetString(2);
+            var client  = r.IsDBNull(3) ? "N/A" : r.GetString(3);
+            var serv    = r.IsDBNull(4) ? "N/A" : r.GetString(4);
+            var status  = r.IsDBNull(5) ? "N/A" : r.GetString(5);
+            var inicio  = r.IsDBNull(6) ? "N/A" : r.GetDateTime(6).ToString("yyyy-MM-dd");
+            var fin     = r.IsDBNull(7) ? "N/A" : r.GetDateTime(7).ToString("yyyy-MM-dd");
+            var prog    = r.IsDBNull(8) ? 0 : r.GetInt32(8);
+            sb.AppendLine("PROYECTO DEL CLIENTE:");
+            sb.AppendLine($"- Nombre: {name} ({pcode})");
+            sb.AppendLine($"- Cliente: {client}");
+            sb.AppendLine($"- Servicio: {serv}");
+            sb.AppendLine($"- Estado: {status}");
+            sb.AppendLine($"- Progreso: {prog}%");
+            sb.AppendLine($"- Inicio: {inicio} · Fin estimado: {fin}");
+        }
+    }
+
+    if (projId == null)
+        return "(No se encontró el proyecto del cliente.)";
+
+    // Tareas de ese proyecto
+    var tareas = new List<string>();
+    await using (var cmd = new NpgsqlCommand(
+        "SELECT title, status, due_date FROM tasks WHERE project_id = @id ORDER BY created_at", conn))
+    {
+        cmd.Parameters.AddWithValue("id", projId.Value);
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            var titulo = r.GetString(0);
+            var st     = r.IsDBNull(1) ? "" : r.GetString(1);
+            var vence  = r.IsDBNull(2) ? "" : $" (vence {r.GetDateTime(2):yyyy-MM-dd})";
+            tareas.Add($"- [{st}] {titulo}{vence}");
+        }
+    }
+    sb.AppendLine();
+    sb.AppendLine($"TAREAS DEL PROYECTO ({tareas.Count}):");
+    sb.AppendLine(tareas.Count > 0 ? string.Join("\n", tareas) : "- (sin tareas registradas)");
+
+    // Entregables visibles de ese proyecto
+    var entregables = new List<string>();
+    await using (var cmd = new NpgsqlCommand(
+        "SELECT name, type FROM documents WHERE project_id = @id AND enabled = TRUE ORDER BY uploaded_at DESC", conn))
+    {
+        cmd.Parameters.AddWithValue("id", projId.Value);
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+        {
+            var nombre = r.GetString(0);
+            var tipo   = r.IsDBNull(1) ? "otro" : r.GetString(1);
+            entregables.Add($"- {tipo}: {nombre}");
+        }
+    }
+    sb.AppendLine();
+    sb.AppendLine($"ENTREGABLES DISPONIBLES ({entregables.Count}):");
+    sb.AppendLine(entregables.Count > 0 ? string.Join("\n", entregables) : "- (sin entregables disponibles)");
+
+    return sb.ToString();
+}
+
 app.MapPost("/api/chat", async (ChatRequest req) =>
 {
     if (string.IsNullOrWhiteSpace(groqKey))
         return Results.Ok(new { reply = "⚠️ El servidor no tiene configurada la API key de Groq (revisa appsettings.json)." });
 
-    // Solo el panel interno recibe los datos de la empresa; el portal público no
-    string contexto = req.WithContext
-        ? await ConstruirContexto(connStr)
-        : "(Responde de forma general sobre DINAMIK: servicios, contacto, etc.)";
+    // 1) Cliente identificado por su código -> contexto SOLO de su proyecto
+    // 2) Panel interno (admin) -> contexto de toda la empresa
+    // 3) Resto -> respuesta general
+    string contexto;
+    if (!string.IsNullOrWhiteSpace(req.ProjectCode))
+        contexto = await ConstruirContextoCliente(connStr, req.ProjectCode);
+    else if (req.WithContext)
+        contexto = await ConstruirContexto(connStr);
+    else
+        contexto = "(Responde de forma general sobre DINAMIK: servicios, contacto, etc.)";
 
     var systemPrompt = $@"Eres DINA, la asistente virtual inteligente de DINAMIK DK GROUP SAC, empresa peruana de Arquitectura, Ingeniería & Construcción en Jesús María, Lima.
 Personalidad: amigable, profesional, español peruano natural, emojis con moderación.
@@ -564,5 +663,5 @@ record RoleRequest(string Role);
 record TaskRequest(string ProjectId, string Title, string? Description, string? Status, string? Priority, string? AssignedTo, DateOnly? DueDate);
 record TaskStatusRequest(string Status);
 
-record ChatRequest(List<ChatMessage> Messages, bool WithContext);
+record ChatRequest(List<ChatMessage> Messages, bool WithContext, string? ProjectCode);
 record ChatMessage(string Role, string Content);
