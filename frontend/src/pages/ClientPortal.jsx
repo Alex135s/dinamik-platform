@@ -37,8 +37,8 @@ function ClientPortal() {
       }
       setProject(found)
       const [docsRes, tasksRes] = await Promise.all([
-        axios.get(`' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents/project/${found.id}`),
-        axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${found.id}`).catch(() => ({ data: [] })),
+        axios.get(`${import.meta.env.VITE_DOCUMENTS_API}/api/documents/project/${found.id}`),
+        axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${found.id}`).catch(() => ({ data: [] })),
       ])
       setDocs(docsRes.data.filter(d => d.enabled))
       setAllDocs(docsRes.data)

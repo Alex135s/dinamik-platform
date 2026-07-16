@@ -46,7 +46,7 @@ function Tasks() {
     try {
       const [projRes, tasksRes, usersRes] = await Promise.all([
         axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects'),
-        axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${projectId}`),
+        axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${projectId}`),
         axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/users'),
       ])
       const found = projRes.data.find(p => p.id === projectId)
@@ -89,7 +89,7 @@ function Tasks() {
     }
     try {
       if (editingId) {
-        await axios.put(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${editingId}`, {
+        await axios.put(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${editingId}`, {
           projectId,
           title:       form.title,
           description: form.description || null,
@@ -122,7 +122,7 @@ function Tasks() {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await axios.patch(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${id}/status`, { status: newStatus })
+      await axios.patch(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${id}/status`, { status: newStatus })
       fetchData()
     } catch {
       showToast('Error al actualizar el estado.', 'error')
@@ -133,7 +133,7 @@ function Tasks() {
     if (!confirm(`¿Eliminar tarea "${title}"?`)) return
     setDeletingId(id)
     try {
-      await axios.delete(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${id}`)
+      await axios.delete(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${id}`)
       showToast('Tarea eliminada.', 'success')
       fetchData()
     } catch {

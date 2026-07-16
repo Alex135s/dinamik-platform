@@ -150,7 +150,7 @@ function Documents() {
 
   const toggleEnabled = async (id, currentEnabled) => {
     try {
-      await axios.patch(`' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents/${id}/toggle`, { enabled: !currentEnabled })
+      await axios.patch(`${import.meta.env.VITE_DOCUMENTS_API}/api/documents/${id}/toggle`, { enabled: !currentEnabled })
       fetchData()
     } catch {
       showToast('Error al cambiar el estado.', 'error')
@@ -161,7 +161,7 @@ function Documents() {
     if (!confirm(`¿Eliminar "${name}"?`)) return
     setDeletingId(id)
     try {
-      await axios.delete(`' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents/${id}`)
+      await axios.delete(`${import.meta.env.VITE_DOCUMENTS_API}/api/documents/${id}`)
       showToast('Documento eliminado.', 'success')
       fetchData()
     } catch {

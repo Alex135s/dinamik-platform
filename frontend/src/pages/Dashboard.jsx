@@ -33,7 +33,7 @@ function Dashboard() {
   useEffect(() => {
     if (projects.length === 0) return
     Promise.all(
-      projects.map(p => axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${p.id}`))
+      projects.map(p => axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${p.id}`))
     ).then(results => {
       setTasks(results.flatMap(r => r.data))
     }).catch(() => {})

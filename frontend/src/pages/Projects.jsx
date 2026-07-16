@@ -143,7 +143,7 @@ function Projects() {
         longitude: form.longitude ? parseFloat(form.longitude) : null,
       }
       if (editingId) {
-        await axios.put(`' + import.meta.env.VITE_PROJECTS_API + '/api/projects/${editingId}`, payload)
+        await axios.put(`${import.meta.env.VITE_PROJECTS_API}/api/projects/${editingId}`, payload)
         showToast('Proyecto actualizado correctamente.', 'success')
       } else {
         await axios.post('' + import.meta.env.VITE_PROJECTS_API + '/api/projects', payload)
@@ -157,7 +157,7 @@ function Projects() {
     if (!confirm(`¿Eliminar "${name}"?`)) return
     setDeletingId(id)
     try {
-      await axios.delete(`' + import.meta.env.VITE_PROJECTS_API + '/api/projects/${id}`)
+      await axios.delete(`${import.meta.env.VITE_PROJECTS_API}/api/projects/${id}`)
       showToast(`Proyecto "${name}" eliminado.`, 'success')
       fetchData()
     } catch { showToast('Error al eliminar el proyecto.', 'error') }
