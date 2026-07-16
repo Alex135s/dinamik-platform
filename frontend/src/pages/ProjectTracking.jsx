@@ -51,7 +51,7 @@ function ProjectTracking() {
       const taskMap = {}
       await Promise.all(
         visibles.map(p =>
-          axios.get(`' + import.meta.env.VITE_PROJECTS_API + '/api/tasks/${p.id}`)
+          axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${p.id}`)
             .then(r => { taskMap[p.id] = r.data })
             .catch(() => { taskMap[p.id] = [] })
         )
