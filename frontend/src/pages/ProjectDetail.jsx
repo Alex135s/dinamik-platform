@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import ShareProjectCode from '../components/ShareProjectCode'
 
 const API = '' + import.meta.env.VITE_PROJECTS_API + ''        // ProjectsApi
 const DOCS_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''    // DocumentsApi
@@ -131,7 +132,10 @@ function ProjectDetail() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-              <p className="text-orange-500 text-sm font-mono">{project.projectCode}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-orange-500 text-sm font-mono">{project.projectCode}</p>
+                <ShareProjectCode code={project.projectCode} projectName={project.name} client={project.client} size="md" />
+              </div>
               <p className="text-gray-400 text-sm mt-0.5">
                 {project.client}{project.serviceType ? ` · ${project.serviceType}` : ''}
               </p>

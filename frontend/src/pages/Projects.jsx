@@ -5,6 +5,7 @@ import { exportProjectsPDF, exportProjectsExcel } from '../utils/exportUtils'
 import Pagination from '../components/Pagination'
 import { usePermissions } from '../hooks/usePermissions'
 import { useNavigate } from 'react-router-dom'
+import ShareProjectCode from '../components/ShareProjectCode'
 
 const SERVICE_TYPES = ['estructural', 'BIM', 'topografia', 'viabilidad', 'construccion']
 const STATUS_TYPES  = ['activo', 'en_proceso', 'completado']
@@ -414,7 +415,10 @@ function Projects() {
 
                 {/* Info */}
                 <h3 className="text-white font-semibold text-sm mb-0.5 line-clamp-2">{p.name}</h3>
-                <p className="text-orange-500 text-xs font-mono">{p.projectCode}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-orange-500 text-xs font-mono">{p.projectCode}</p>
+                  <ShareProjectCode code={p.projectCode} projectName={p.name} client={p.client} />
+                </div>
                 <p className="text-gray-400 text-xs mt-1 truncate">{p.client}</p>
                 {p.location && (
                   <p className="text-gray-500 text-xs mt-1 flex items-center gap-1">
@@ -513,6 +517,7 @@ function Projects() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-white font-semibold text-sm">{p.name}</h3>
                     {p.projectCode && <span className="text-orange-500 text-xs font-mono">{p.projectCode}</span>}
+                    {p.projectCode && <ShareProjectCode code={p.projectCode} projectName={p.name} client={p.client} />}
                     {alert && (
                       <span className={`text-xs px-2 py-0.5 rounded-full border ${alert.color}`}>
                         {alert.tipo === 'vencido' ? '🔴' : alert.tipo === 'urgente' ? '🟠' : '🟡'} {alert.label}
