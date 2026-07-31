@@ -1,8 +1,11 @@
+import { useState } from 'react'
+import { LuCopy, LuCheck, LuMessageCircle, LuMail } from 'react-icons/lu'
 import { useToast } from '../context/ToastContext'
 
 // Botones para copiar/compartir el código de un proyecto (WhatsApp / Email)
 function ShareProjectCode({ code, projectName, client, size = 'sm' }) {
   const { showToast } = useToast()
+  const [copied, setCopied] = useState(false)
   if (!code) return null
 
   const message = `Hola${client ? ` ${client}` : ''}, el código de seguimiento de tu proyecto "${projectName || ''}" en DINAMIK es: ${code}`
@@ -12,6 +15,8 @@ function ShareProjectCode({ code, projectName, client, size = 'sm' }) {
     try {
       await navigator.clipboard.writeText(code)
       showToast(`Código ${code} copiado al portapapeles.`, 'success')
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
     } catch {
       showToast('No se pudo copiar el código.', 'error')
     }
@@ -28,23 +33,23 @@ function ShareProjectCode({ code, projectName, client, size = 'sm' }) {
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`
   }
 
-  const btnClass = size === 'sm'
-    ? 'w-6 h-6 text-xs'
-    : 'w-8 h-8 text-sm'
+  const btnSize = size === 'sm' ? 'w-6 h-6' : 'w-8 h-8'
+  const iconSize = size === 'sm' ? 13 : 15
+  const btnClass = `${btnSize} inline-flex items-center justify-center rounded-md border border-gray-600/60 bg-gray-700/80 text-gray-400 transition-colors`
 
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex items-center gap-1.5">
       <button type="button" onClick={handleCopy} title="Copiar código"
-        className={`${btnClass} inline-flex items-center justify-center rounded-md bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 transition-colors`}>
-        📋
+        className={`${btnClass} ${copied ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'hover:bg-orange-500/20 hover:border-orange-500/40 hover:text-orange-400'}`}>
+        {copied ? <LuCheck size={iconSize} /> : <LuCopy size={iconSize} />}
       </button>
       <button type="button" onClick={handleWhatsapp} title="Enviar por WhatsApp"
-        className={`${btnClass} inline-flex items-center justify-center rounded-md bg-gray-700 hover:bg-green-500/20 hover:text-green-400 text-gray-400 transition-colors`}>
-        💬
+        className={`${btnClass} hover:bg-green-500/20 hover:border-green-500/40 hover:text-green-400`}>
+        <LuMessageCircle size={iconSize} />
       </button>
       <button type="button" onClick={handleEmail} title="Enviar por correo"
-        className={`${btnClass} inline-flex items-center justify-center rounded-md bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 transition-colors`}>
-        ✉️
+        className={`${btnClass} hover:bg-blue-500/20 hover:border-blue-500/40 hover:text-blue-400`}>
+        <LuMail size={iconSize} />
       </button>
     </span>
   )
