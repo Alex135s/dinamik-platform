@@ -1,4 +1,4 @@
-import { FaHardHat, FaCubes, FaFileAlt, FaMountain, FaBuilding, FaEye, FaWhatsapp } from 'react-icons/fa'
+import { FaHardHat, FaCubes, FaFileAlt, FaMountain, FaBuilding, FaEye } from 'react-icons/fa'
 
 function Services({ onWhatsapp }) {
   const services = [

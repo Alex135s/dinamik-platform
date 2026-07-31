@@ -13,7 +13,7 @@ function Login({ onLogin }) {
     try {
       const res = await axios.post('' + import.meta.env.VITE_PROJECTS_API + '/api/auth/login', form)
       onLogin(res.data)
-    } catch (err) {
+    } catch {
       setError('Email o contraseña incorrectos.')
     } finally {
       setLoading(false)

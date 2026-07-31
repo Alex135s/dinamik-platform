@@ -1,4 +1,3 @@
-import { useOutletContext } from 'react-router-dom'
 import About from '../../components/website/About'
 
 function WebNosotros() {

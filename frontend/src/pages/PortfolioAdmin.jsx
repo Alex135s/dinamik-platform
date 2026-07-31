@@ -42,9 +42,8 @@ function compressImage(file, maxWidth = 1600, quality = 0.8) {
 
 // Sube una sola imagen a Firebase y la registra en la galería
 function subirUna(file, title, category, onProgress) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const blob = await compressImage(file)
+  return new Promise((resolve, reject) => {
+    compressImage(file).then(blob => {
       const safeName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_')
       const storageRef = ref(storage, `gallery/${Date.now()}_${safeName}.jpg`)
       const task = uploadBytesResumable(storageRef, blob)
@@ -52,15 +51,14 @@ function subirUna(file, title, category, onProgress) {
       task.on('state_changed',
         snap => onProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
         err => reject(err),
-        async () => {
-          const imageUrl = await getDownloadURL(task.snapshot.ref)
-          const res = await axios.post(`${GALLERY_API}/api/gallery`, { title, category, imageUrl, enabled: true })
-          resolve(res.data?.id)
+        () => {
+          getDownloadURL(task.snapshot.ref)
+            .then(imageUrl => axios.post(`${GALLERY_API}/api/gallery`, { title, category, imageUrl, enabled: true }))
+            .then(res => resolve(res.data?.id))
+            .catch(reject)
         }
       )
-    } catch (err) {
-      reject(err)
-    }
+    }).catch(reject)
   })
 }
 
