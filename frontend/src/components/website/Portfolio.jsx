@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
+import { LuImages, LuX } from 'react-icons/lu'
 
 const GALLERY_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''
 
@@ -79,7 +80,7 @@ function Portfolio() {
           <p className="text-center text-gray-400 text-sm">Cargando proyectos...</p>
         ) : albums.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-5xl mb-3">📷</p>
+            <div className="flex justify-center mb-3 text-gray-300"><LuImages size={48} /></div>
             <p className="text-gray-400 text-sm">
               {photos.length === 0
                 ? 'Aún no hay fotos en el portafolio.'
@@ -98,7 +99,7 @@ function Portfolio() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   {/* Contador de fotos */}
                   <span className="absolute top-3 right-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
-                    🖼️ {album.photos.length} {album.photos.length === 1 ? 'foto' : 'fotos'}
+                    <LuImages size={12} /> {album.photos.length} {album.photos.length === 1 ? 'foto' : 'fotos'}
                   </span>
                 </div>
                 <div className="p-5">
@@ -126,7 +127,7 @@ function Portfolio() {
                 </p>
               </div>
               <button onClick={() => setOpenAlbum(null)}
-                className="text-white hover:text-orange-400 text-3xl px-2">✕</button>
+                className="text-white hover:text-orange-400 px-2"><LuX size={30} /></button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {openAlbum.photos.map(p => (
@@ -146,7 +147,7 @@ function Portfolio() {
         <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4"
           onClick={() => setZoomPhoto(null)}>
           <button onClick={() => setZoomPhoto(null)}
-            className="absolute top-4 right-6 text-white hover:text-orange-400 text-4xl">✕</button>
+            className="absolute top-4 right-6 text-white hover:text-orange-400"><LuX size={36} /></button>
           <img src={zoomPhoto} alt="" className="max-w-full max-h-[90vh] object-contain rounded-lg"
             onClick={e => e.stopPropagation()} />
         </div>

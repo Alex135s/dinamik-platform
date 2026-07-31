@@ -3,14 +3,17 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import {
+  LuHardHat, LuSquare, LuSun, LuBrickWall, LuImages, LuUpload, LuX, LuPlus, LuEye, LuBan, LuTrash2,
+} from 'react-icons/lu'
 
 const GALLERY_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''
 
 const CATEGORIES = [
-  { key: 'estructuras_metalicas', label: 'Estructuras metálicas', icon: '🏗️' },
-  { key: 'cielo_raso',           label: 'Cielo raso / Drywall',   icon: '🔲' },
-  { key: 'policarbonato',        label: 'Policarbonato / Coberturas', icon: '☀️' },
-  { key: 'obra_civil',           label: 'Obra civil / Concreto',  icon: '🧱' },
+  { key: 'estructuras_metalicas', label: 'Estructuras metálicas', icon: LuHardHat },
+  { key: 'cielo_raso',           label: 'Cielo raso / Drywall',   icon: LuSquare },
+  { key: 'policarbonato',        label: 'Policarbonato / Coberturas', icon: LuSun },
+  { key: 'obra_civil',           label: 'Obra civil / Concreto',  icon: LuBrickWall },
 ]
 
 const labelOf = (key) => CATEGORIES.find(c => c.key === key)?.label || key
@@ -237,7 +240,7 @@ function PortfolioAdmin() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">🖼️ Galería del Portafolio</h1>
+        <h1 className="text-2xl font-bold text-white flex items-center gap-2"><LuImages size={22} /> Galería del Portafolio</h1>
         <p className="text-gray-400 text-sm mt-1">
           Sube fotos de obra agrupadas por álbum. Aparecerán en el portafolio de la web pública.
         </p>
@@ -245,7 +248,7 @@ function PortfolioAdmin() {
 
       {/* Formulario de subida */}
       <div className="bg-gray-800 rounded-xl p-6 border border-orange-500/30 mb-6">
-        <h2 className="text-white font-semibold mb-4">📤 Subir álbum de fotos</h2>
+        <h2 className="text-white font-semibold mb-4 flex items-center gap-2"><LuUpload size={16} /> Subir álbum de fotos</h2>
 
         <input
           placeholder="Título del álbum (ej: Cielo raso San Ramón) *"
@@ -259,7 +262,7 @@ function PortfolioAdmin() {
             <select value={category} onChange={e => setCategory(e.target.value)}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none w-full">
               {CATEGORIES.map(c => (
-                <option key={c.key} value={c.key}>{c.icon} {c.label}</option>
+                <option key={c.key} value={c.key}>{c.label}</option>
               ))}
             </select>
           </div>
@@ -281,9 +284,9 @@ function PortfolioAdmin() {
             <div className="flex flex-wrap gap-2">
               {files.map((f, i) => (
                 <span key={i} className="flex items-center gap-2 bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-full">
-                  🖼️ {f.name.length > 22 ? f.name.slice(0, 22) + '…' : f.name}
+                  <LuImages size={12} /> {f.name.length > 22 ? f.name.slice(0, 22) + '…' : f.name}
                   {!uploading && (
-                    <button onClick={() => quitarArchivo(i)} className="text-gray-400 hover:text-red-400">✕</button>
+                    <button onClick={() => quitarArchivo(i)} className="text-gray-400 hover:text-red-400"><LuX size={12} /></button>
                   )}
                 </span>
               ))}
@@ -303,8 +306,8 @@ function PortfolioAdmin() {
         )}
 
         <button onClick={handleUpload} disabled={uploading || files.length === 0 || !title.trim()}
-          className="mt-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium">
-          {uploading ? `Subiendo ${current}/${files.length}...` : '📤 Subir álbum'}
+          className="mt-4 flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium">
+          {uploading ? `Subiendo ${current}/${files.length}...` : <><LuUpload size={14} /> Subir álbum</>}
         </button>
       </div>
 
@@ -319,9 +322,9 @@ function PortfolioAdmin() {
           const count = photos.filter(p => p.category === c.key).length
           return (
             <button key={c.key} onClick={() => setFilter(c.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5
                 ${filter === c.key ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
-              {c.icon} {c.label} ({count})
+              <c.icon size={12} /> {c.label} ({count})
             </button>
           )
         })}
@@ -332,7 +335,7 @@ function PortfolioAdmin() {
         <p className="text-gray-400 text-sm">Cargando galería...</p>
       ) : albums.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
-          <p className="text-4xl mb-3">🖼️</p>
+          <div className="flex justify-center mb-3 text-gray-500"><LuImages size={40} /></div>
           <p className="text-gray-400 text-sm">No hay álbumes en esta categoría todavía.</p>
         </div>
       ) : (
@@ -349,21 +352,21 @@ function PortfolioAdmin() {
                     <p className="text-orange-400 text-xs">{labelOf(album.category)} · {album.photos.length} fotos</p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <label className={`text-xs px-3 py-1.5 rounded-lg font-medium bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
-                      ➕ Agregar fotos
+                    <label className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <LuPlus size={13} /> Agregar fotos
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={e => { addToAlbum(album, e.target.files); e.target.value = '' }} />
                     </label>
                     <button onClick={() => toggleAlbum(album)} disabled={busy}
-                      className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50
                         ${allVisible
                           ? 'bg-green-500/20 text-green-400 hover:bg-gray-700'
                           : 'bg-gray-700 text-gray-400 hover:bg-green-500/20 hover:text-green-400'}`}>
-                      {busy ? '...' : allVisible ? '👁 Ocultar álbum' : '👁 Mostrar álbum'}
+                      {busy ? '...' : <><LuEye size={13} /> {allVisible ? 'Ocultar álbum' : 'Mostrar álbum'}</>}
                     </button>
                     <button onClick={() => deleteAlbum(album)} disabled={busy}
-                      className="text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-700 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-50">
-                      🗑 Borrar álbum
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-700 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-colors disabled:opacity-50">
+                      <LuTrash2 size={13} /> Borrar álbum
                     </button>
                   </div>
                 </div>
@@ -390,11 +393,11 @@ function PortfolioAdmin() {
                         <button onClick={() => togglePhoto(p.id, p.enabled)}
                           title={p.enabled ? 'Ocultar foto' : 'Mostrar foto'}
                           className="bg-black/60 hover:bg-black/80 text-white text-xs w-7 h-7 rounded-md flex items-center justify-center">
-                          {p.enabled ? '👁' : '🚫'}
+                          {p.enabled ? <LuEye size={14} /> : <LuBan size={14} />}
                         </button>
                         <button onClick={() => deletePhoto(p.id)} title="Borrar foto"
                           className="bg-black/60 hover:bg-red-500/80 text-white text-xs w-7 h-7 rounded-md flex items-center justify-center">
-                          🗑
+                          <LuTrash2 size={14} />
                         </button>
                       </div>
                       {!p.enabled && (

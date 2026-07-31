@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { LuX, LuMessageCircle, LuBot, LuTrash2, LuSend } from 'react-icons/lu'
 
 const CHAT_API = '' + import.meta.env.VITE_PROJECTS_API + ''
 
@@ -70,7 +71,7 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
             ? 'bg-gray-700 hover:bg-gray-600 text-white'
             : 'bg-orange-500 hover:bg-orange-600 text-white'
           }`}>
-        <span className="text-xl">{open ? '✕' : '💬'}</span>
+        <span>{open ? <LuX size={22} /> : <LuMessageCircle size={22} />}</span>
         {!open && <span className="text-sm font-semibold pr-1">Asistente IA</span>}
       </button>
 
@@ -81,8 +82,8 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
           {/* Header mejorado */}
           <div className="bg-gradient-to-r from-orange-600 to-orange-500 px-4 py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">
-                🤖
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white">
+                <LuBot size={20} />
               </div>
               <div>
                 <p className="text-white font-bold text-sm">DINA</p>
@@ -93,8 +94,8 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
               </div>
             </div>
             <button onClick={clearChat}
-              className="text-white/60 hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">
-              🗑 Limpiar
+              className="flex items-center gap-1 text-white/60 hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-white/10 transition-colors">
+              <LuTrash2 size={13} /> Limpiar
             </button>
           </div>
 
@@ -104,8 +105,8 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
             {/* Pantalla de bienvenida */}
             {showWelcome && messages.length === 0 && (
               <div className="text-center py-4">
-                <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-3xl">🤖</span>
+                <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-orange-400">
+                  <LuBot size={30} />
                 </div>
                 <p className="text-white font-semibold text-sm">¡Hola! Soy DINA 👋</p>
                 <p className="text-gray-400 text-xs mt-1 leading-relaxed">
@@ -133,8 +134,8 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
               <div key={i} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {/* Avatar asistente */}
                 {msg.role === 'assistant' && (
-                  <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mb-1">
-                    <span className="text-xs">🤖</span>
+                  <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mb-1 text-white">
+                    <LuBot size={13} />
                   </div>
                 )}
                 <div className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed
@@ -150,8 +151,8 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
             {/* Indicador de escritura */}
             {loading && (
               <div className="flex items-end gap-2 justify-start">
-                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs">🤖</span>
+                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 text-white">
+                  <LuBot size={13} />
                 </div>
                 <div className="bg-gray-800 border border-gray-700/50 rounded-2xl rounded-bl-sm px-4 py-3">
                   <div className="flex gap-1 items-center">
@@ -180,7 +181,7 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
                 onClick={() => sendMessage()}
                 disabled={loading || !input.trim()}
                 className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 hover:scale-105 active:scale-95">
-                <span className="text-sm">➤</span>
+                <LuSend size={15} />
               </button>
             </div>
             <p className="text-gray-600 text-xs text-center mt-2">DINA · Powered by Groq AI</p>

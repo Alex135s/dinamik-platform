@@ -39,6 +39,10 @@ if (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://"))
 }
 string jwtKey  = "DinamikPlatform2026ClaveSecreta!!";
 
+// Token de ApiPeru.dev para consulta de DNI/RUC (dejar vacío hasta configurarlo en Render / appsettings)
+string apiPeruToken = builder.Configuration["ApiPeru:Token"] ?? "";
+var httpApiPeru = new HttpClient();
+
 string GenerarToken(string id, string name, string email, string role)
 {
     var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -113,28 +117,30 @@ app.MapGet("/api/projects", async () =>
     await using var cmd = new NpgsqlCommand(
         @"SELECT id, name, client, service_type, status, start_date,
                  created_at, project_code, whatsapp, end_date, progress, assigned_to,
-                 location, latitude, longitude
+                 location, latitude, longitude, client_doc_type, client_doc_number
           FROM projects ORDER BY created_at DESC", conn);
     await using var reader = await cmd.ExecuteReaderAsync();
     while (await reader.ReadAsync())
     {
         projects.Add(new
         {
-            id          = reader.GetGuid(0),
-            name        = reader.GetString(1),
-            client      = reader.IsDBNull(2)  ? null : reader.GetString(2),
-            serviceType = reader.IsDBNull(3)  ? null : reader.GetString(3),
-            status      = reader.IsDBNull(4)  ? null : reader.GetString(4),
-            startDate   = reader.IsDBNull(5)  ? null : reader.GetDateTime(5).ToString("yyyy-MM-dd"),
-            createdAt   = reader.GetDateTime(6),
-            projectCode = reader.IsDBNull(7)  ? null : reader.GetString(7),
-            whatsapp    = reader.IsDBNull(8)  ? null : reader.GetString(8),
-            endDate     = reader.IsDBNull(9)  ? null : reader.GetDateTime(9).ToString("yyyy-MM-dd"),
-            progress    = reader.IsDBNull(10) ? 0    : reader.GetInt32(10),
-           assignedTo  = reader.IsDBNull(11) ? null : reader.GetGuid(11).ToString(),
-            location    = reader.IsDBNull(12) ? null : reader.GetString(12),
-            latitude    = reader.IsDBNull(13) ? (decimal?)null : reader.GetDecimal(13),
-            longitude   = reader.IsDBNull(14) ? (decimal?)null : reader.GetDecimal(14)
+            id             = reader.GetGuid(0),
+            name           = reader.GetString(1),
+            client         = reader.IsDBNull(2)  ? null : reader.GetString(2),
+            serviceType    = reader.IsDBNull(3)  ? null : reader.GetString(3),
+            status         = reader.IsDBNull(4)  ? null : reader.GetString(4),
+            startDate      = reader.IsDBNull(5)  ? null : reader.GetDateTime(5).ToString("yyyy-MM-dd"),
+            createdAt      = reader.GetDateTime(6),
+            projectCode    = reader.IsDBNull(7)  ? null : reader.GetString(7),
+            whatsapp       = reader.IsDBNull(8)  ? null : reader.GetString(8),
+            endDate        = reader.IsDBNull(9)  ? null : reader.GetDateTime(9).ToString("yyyy-MM-dd"),
+            progress       = reader.IsDBNull(10) ? 0    : reader.GetInt32(10),
+            assignedTo     = reader.IsDBNull(11) ? null : reader.GetGuid(11).ToString(),
+            location       = reader.IsDBNull(12) ? null : reader.GetString(12),
+            latitude       = reader.IsDBNull(13) ? (decimal?)null : reader.GetDecimal(13),
+            longitude      = reader.IsDBNull(14) ? (decimal?)null : reader.GetDecimal(14),
+            clientDocType   = reader.IsDBNull(15) ? null : reader.GetString(15),
+            clientDocNumber = reader.IsDBNull(16) ? null : reader.GetString(16)
         });
     }
     return Results.Ok(projects);
@@ -146,9 +152,9 @@ app.MapPost("/api/projects", async (ProjectRequest req) =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        @"INSERT INTO projects (name, client, service_type, status, start_date, end_date, progress, project_code, assigned_to, location, latitude, longitude)
+        @"INSERT INTO projects (name, client, service_type, status, start_date, end_date, progress, project_code, assigned_to, location, latitude, longitude, client_doc_type, client_doc_number)
           VALUES (@name, @client, @serviceType, @status, @startDate, @endDate, @progress,
-                  'DIN-' || UPPER(SUBSTRING(gen_random_uuid()::text, 1, 6)), @assignedTo, @location, @latitude, @longitude)
+                  'DIN-' || UPPER(SUBSTRING(gen_random_uuid()::text, 1, 6)), @assignedTo, @location, @latitude, @longitude, @clientDocType, @clientDocNumber)
           RETURNING id, project_code", conn);
     cmd.Parameters.AddWithValue("name",        req.Name);
     cmd.Parameters.AddWithValue("client",      req.Client      ?? (object)DBNull.Value);
@@ -161,6 +167,8 @@ app.MapPost("/api/projects", async (ProjectRequest req) =>
     cmd.Parameters.AddWithValue("location",  req.Location  ?? (object)DBNull.Value);
     cmd.Parameters.AddWithValue("latitude",  req.Latitude.HasValue  ? req.Latitude.Value  : DBNull.Value);
     cmd.Parameters.AddWithValue("longitude", req.Longitude.HasValue ? req.Longitude.Value : DBNull.Value);
+    cmd.Parameters.AddWithValue("clientDocType",   req.ClientDocType   ?? (object)DBNull.Value);
+    cmd.Parameters.AddWithValue("clientDocNumber", req.ClientDocNumber ?? (object)DBNull.Value);
     await using var reader = await cmd.ExecuteReaderAsync();
     if (await reader.ReadAsync())
         return Results.Ok(new { id = reader.GetGuid(0), projectCode = reader.GetString(1) });
@@ -177,7 +185,8 @@ app.MapPut("/api/projects/{id}", async (string id, ProjectRequest req) =>
             name=@name, client=@client, service_type=@serviceType,
             status=@status, start_date=@startDate, end_date=@endDate,
             progress=@progress, assigned_to=@assignedTo,
-            location=@location, latitude=@latitude, longitude=@longitude
+            location=@location, latitude=@latitude, longitude=@longitude,
+            client_doc_type=@clientDocType, client_doc_number=@clientDocNumber
           WHERE id=@id", conn);
     cmd.Parameters.AddWithValue("id",          Guid.Parse(id));
     cmd.Parameters.AddWithValue("name",        req.Name);
@@ -191,6 +200,8 @@ app.MapPut("/api/projects/{id}", async (string id, ProjectRequest req) =>
     cmd.Parameters.AddWithValue("location",  req.Location  ?? (object)DBNull.Value);
     cmd.Parameters.AddWithValue("latitude",  req.Latitude.HasValue  ? req.Latitude.Value  : DBNull.Value);
     cmd.Parameters.AddWithValue("longitude", req.Longitude.HasValue ? req.Longitude.Value : DBNull.Value);
+    cmd.Parameters.AddWithValue("clientDocType",   req.ClientDocType   ?? (object)DBNull.Value);
+    cmd.Parameters.AddWithValue("clientDocNumber", req.ClientDocNumber ?? (object)DBNull.Value);
     await cmd.ExecuteNonQueryAsync();
     return Results.Ok(new { success = true });
 });
@@ -204,6 +215,81 @@ app.MapDelete("/api/projects/{id}", async (string id) =>
     cmd.Parameters.AddWithValue("id", Guid.Parse(id));
     await cmd.ExecuteNonQueryAsync();
     return Results.Ok(new { success = true });
+});
+
+// ════════════════════════════════════════════════════════════
+//  CONSULTA DNI / RUC (ApiPeru.dev) — autocompletar datos del cliente
+//  Token en Render: variable de entorno ApiPeru__Token (o ApiPeru:Token en appsettings.json)
+// ════════════════════════════════════════════════════════════
+app.MapGet("/api/lookup/dni/{dni}", async (string dni) =>
+{
+    if (string.IsNullOrWhiteSpace(dni) || dni.Length != 8 || !dni.All(char.IsDigit))
+        return Results.Ok(new { found = false, error = "El DNI debe tener 8 dígitos." });
+    if (string.IsNullOrWhiteSpace(apiPeruToken))
+        return Results.Ok(new { found = false, error = "El token de ApiPeru no está configurado en el servidor." });
+
+    try
+    {
+        var httpReq = new HttpRequestMessage(HttpMethod.Get, $"https://apiperu.dev/api/dni/{dni}");
+        httpReq.Headers.Add("Authorization", $"Bearer {apiPeruToken}");
+        var resp = await httpApiPeru.SendAsync(httpReq);
+        var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        if (!resp.IsSuccessStatusCode || !json.TryGetProperty("data", out var data))
+            return Results.Ok(new { found = false, error = "No se encontró el DNI." });
+
+        string? Get(string prop) => data.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+
+        var nombreCompleto = Get("nombre_completo");
+        if (string.IsNullOrWhiteSpace(nombreCompleto))
+        {
+            var partes = new[] { Get("nombres"), Get("apellido_paterno"), Get("apellido_materno") }
+                .Where(s => !string.IsNullOrWhiteSpace(s));
+            nombreCompleto = string.Join(" ", partes);
+        }
+
+        if (string.IsNullOrWhiteSpace(nombreCompleto))
+            return Results.Ok(new { found = false, error = "No se encontró el DNI." });
+
+        return Results.Ok(new { found = true, name = nombreCompleto.Trim() });
+    }
+    catch
+    {
+        return Results.Ok(new { found = false, error = "No se pudo consultar el DNI en este momento." });
+    }
+});
+
+app.MapGet("/api/lookup/ruc/{ruc}", async (string ruc) =>
+{
+    if (string.IsNullOrWhiteSpace(ruc) || ruc.Length != 11 || !ruc.All(char.IsDigit))
+        return Results.Ok(new { found = false, error = "El RUC debe tener 11 dígitos." });
+    if (string.IsNullOrWhiteSpace(apiPeruToken))
+        return Results.Ok(new { found = false, error = "El token de ApiPeru no está configurado en el servidor." });
+
+    try
+    {
+        var httpReq = new HttpRequestMessage(HttpMethod.Get, $"https://apiperu.dev/api/ruc/{ruc}");
+        httpReq.Headers.Add("Authorization", $"Bearer {apiPeruToken}");
+        var resp = await httpApiPeru.SendAsync(httpReq);
+        var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+
+        if (!resp.IsSuccessStatusCode || !json.TryGetProperty("data", out var data))
+            return Results.Ok(new { found = false, error = "No se encontró el RUC." });
+
+        string? Get(string prop) => data.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+
+        var razonSocial = Get("nombre_o_razon_social") ?? Get("razon_social") ?? Get("nombre");
+        var direccion   = Get("direccion_completa") ?? Get("direccion");
+
+        if (string.IsNullOrWhiteSpace(razonSocial))
+            return Results.Ok(new { found = false, error = "No se encontró el RUC." });
+
+        return Results.Ok(new { found = true, name = razonSocial.Trim(), address = direccion });
+    }
+    catch
+    {
+        return Results.Ok(new { found = false, error = "No se pudo consultar el RUC en este momento." });
+    }
 });
 
 // POST login
@@ -655,7 +741,7 @@ REGLAS:
 
 app.Run();
 
-record ProjectRequest(string Name, string? Client, string? ServiceType, string? Status, DateOnly? StartDate, DateOnly? EndDate, int? Progress, string? AssignedTo, string? Location, decimal? Latitude, decimal? Longitude);
+record ProjectRequest(string Name, string? Client, string? ServiceType, string? Status, DateOnly? StartDate, DateOnly? EndDate, int? Progress, string? AssignedTo, string? Location, decimal? Latitude, decimal? Longitude, string? ClientDocType, string? ClientDocNumber);
 record LoginRequest(string Email, string Password);
 record TokenRequest(string Token);
 record UserRequest(string Name, string Email, string Password, string? Role);

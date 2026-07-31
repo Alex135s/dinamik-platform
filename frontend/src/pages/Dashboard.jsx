@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   LineChart, Line
 } from 'recharts'
+import { LuBell, LuCircleAlert, LuTriangleAlert, LuClock, LuHourglass, LuRefreshCw, LuCircleCheckBig, LuAlarmClock } from 'react-icons/lu'
 
 const statusColors = {
   activo:     { bg: 'bg-green-500/20',  text: 'text-green-400'  },
@@ -109,8 +110,8 @@ function Dashboard() {
         </div>
         {docsNuevos.length > 0 && (
           <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-2">
-            <div className="relative">
-              <span className="text-xl">🔔</span>
+            <div className="relative text-orange-400">
+              <LuBell size={20} />
               <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
                 {docsNuevos.length}
               </span>
@@ -127,7 +128,7 @@ function Dashboard() {
         <div className="grid gap-2 mb-6">
           {vencidos.map(p => (
             <div key={p.id} className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 flex items-center gap-3">
-              <span className="text-lg">🔴</span>
+              <LuCircleAlert size={18} className="text-red-400 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-red-400 text-sm font-semibold">{p.name}</p>
                 <p className="text-red-400/70 text-xs">
@@ -142,7 +143,9 @@ function Dashboard() {
             return (
               <div key={p.id} className={`border rounded-xl px-5 py-3 flex items-center gap-3
                 ${diff <= 7 ? 'bg-red-500/10 border-red-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}>
-                <span className="text-lg">{diff <= 7 ? '🟠' : '🟡'}</span>
+                {diff <= 7
+                  ? <LuTriangleAlert size={18} className="text-red-400 flex-shrink-0" />
+                  : <LuClock size={18} className="text-yellow-400 flex-shrink-0" />}
                 <div className="flex-1">
                   <p className={`text-sm font-semibold ${diff <= 7 ? 'text-red-400' : 'text-yellow-400'}`}>{p.name}</p>
                   <p className={`text-xs ${diff <= 7 ? 'text-red-400/70' : 'text-yellow-400/70'}`}>
@@ -178,17 +181,17 @@ function Dashboard() {
       {tasks.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-            <p className="text-gray-400 text-sm mb-1">⏳ Tareas Pendientes</p>
+            <p className="text-gray-400 text-sm mb-1 flex items-center gap-1.5"><LuHourglass size={14} /> Tareas Pendientes</p>
             <p className="text-3xl font-bold text-yellow-400">{tareasPendientes}</p>
             <p className="text-gray-500 text-xs mt-1">de {tasks.length} totales</p>
           </div>
           <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-            <p className="text-gray-400 text-sm mb-1">🔄 En Progreso</p>
+            <p className="text-gray-400 text-sm mb-1 flex items-center gap-1.5"><LuRefreshCw size={14} /> En Progreso</p>
             <p className="text-3xl font-bold text-blue-400">{tareasEnProgreso}</p>
             <p className="text-gray-500 text-xs mt-1">de {tasks.length} totales</p>
           </div>
           <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-            <p className="text-gray-400 text-sm mb-1">✅ Completadas</p>
+            <p className="text-gray-400 text-sm mb-1 flex items-center gap-1.5"><LuCircleCheckBig size={14} /> Completadas</p>
             <p className="text-3xl font-bold text-green-400">{tareasCompletadas}</p>
             <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
               <div className="bg-green-500 h-1.5 rounded-full transition-all"
@@ -205,7 +208,7 @@ function Dashboard() {
       {porFinalizar.length > 0 && (
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            ⏰ Proyectos por Finalizar
+            <LuAlarmClock size={16} /> Proyectos por Finalizar
             <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full">
               próximos 30 días
             </span>
@@ -298,7 +301,7 @@ function Dashboard() {
       {docsNuevos.length > 0 && (
         <div className="mb-6">
           <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
-            🔔 Documentos recientes
+            <LuBell size={16} /> Documentos recientes
             <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
               {docsNuevos.length} nuevos
             </span>

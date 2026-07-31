@@ -1,5 +1,5 @@
 import Eyebrow from './Eyebrow'
-
+import { LuDownload, LuMessageCircle, LuClipboardList, LuTarget, LuCircleCheckBig, LuMapPin, LuPhone, LuMail } from 'react-icons/lu'
 
 const EMPRESA = {
   direccion: 'Av. República de Chile 478, Jesús María, Lima',
@@ -30,15 +30,15 @@ function Sidebar({ docs, tasks, onWhatsapp }) {
         <div className="space-y-2">
           <button onClick={descargarTodo} disabled={docs.length === 0}
             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm shadow-orange-500/20 transition">
-            ⬇ Descargar todo {docs.length > 0 && `(${docs.length})`}
+            <LuDownload size={15} /> Descargar todo {docs.length > 0 && `(${docs.length})`}
           </button>
           <button onClick={onWhatsapp}
             className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm shadow-green-500/20 transition">
-            💬 WhatsApp
+            <LuMessageCircle size={15} /> WhatsApp
           </button>
           <button onClick={onWhatsapp}
             className="w-full bg-white hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border border-gray-200 transition">
-            📋 Solicitar Cotización
+            <LuClipboardList size={15} /> Solicitar Cotización
           </button>
         </div>
       </div>
@@ -48,7 +48,7 @@ function Sidebar({ docs, tasks, onWhatsapp }) {
         <Eyebrow>Próximo hito</Eyebrow>
         {proximo ? (
           <div className="flex items-start gap-3">
-            <span className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-base flex-shrink-0">🎯</span>
+            <span className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0"><LuTarget size={17} /></span>
             <div className="min-w-0">
               <p className="text-gray-900 text-sm font-semibold">{proximo.title}</p>
               <p className="text-gray-400 text-xs mt-0.5">
@@ -59,7 +59,7 @@ function Sidebar({ docs, tasks, onWhatsapp }) {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-green-100 text-green-600 flex items-center justify-center text-base flex-shrink-0">✅</span>
+            <span className="w-9 h-9 rounded-xl bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0"><LuCircleCheckBig size={17} /></span>
             <p className="text-gray-600 text-sm">
               {tasks.length > 0 ? '¡Todas las tareas completadas!' : 'Aún no hay tareas registradas.'}
             </p>
@@ -72,13 +72,13 @@ function Sidebar({ docs, tasks, onWhatsapp }) {
         <Eyebrow>DINAMIK</Eyebrow>
         <div className="space-y-2 text-sm mb-4">
           <p className="text-gray-600 flex items-start gap-2">
-            <span className="flex-shrink-0">📍</span> {EMPRESA.direccion}
+            <span className="flex-shrink-0"><LuMapPin size={15} /></span> {EMPRESA.direccion}
           </p>
           <p className="text-gray-600 flex items-center gap-2">
-            <span>📞</span> {EMPRESA.telefono}
+            <LuPhone size={15} /> {EMPRESA.telefono}
           </p>
           <p className="text-gray-600 flex items-center gap-2">
-            <span>✉️</span> {EMPRESA.correo}
+            <LuMail size={15} /> {EMPRESA.correo}
           </p>
         </div>
         <div className="rounded-xl overflow-hidden border border-gray-200">

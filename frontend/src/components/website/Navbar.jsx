@@ -1,4 +1,5 @@
 import { FaWhatsapp } from 'react-icons/fa'
+import { LuMenu } from 'react-icons/lu'
 
 function Navbar({ onWhatsapp, onScrollTo, menuOpen, setMenuOpen }) {
   return (
@@ -17,7 +18,7 @@ function Navbar({ onWhatsapp, onScrollTo, menuOpen, setMenuOpen }) {
             <FaWhatsapp /> Contáctanos
           </button>
         </div>
-        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-700 text-2xl">☰</button>
+        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-700"><LuMenu size={26} /></button>
       </div>
       {menuOpen && (
         <div className="md:hidden bg-white border-t px-6 py-4 flex flex-col gap-4">

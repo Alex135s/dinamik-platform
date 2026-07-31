@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { LuFileText, LuLock, LuX, LuBan } from 'react-icons/lu'
 
 function PDFViewerProtected({ url, name, clientName, projectCode, onClose }) {
   const [showAlert, setShowAlert] = useState(false)
@@ -54,19 +55,19 @@ function PDFViewerProtected({ url, name, clientName, projectCode, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-700 flex-shrink-0 bg-gray-800 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <span className="text-orange-500 text-xl">📄</span>
+            <span className="text-orange-500"><LuFileText size={20} /></span>
             <div>
               <p className="text-white font-semibold text-sm">{name}</p>
               <p className="text-gray-400 text-xs">{projectCode} · Solo visualización</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="bg-yellow-500/20 text-yellow-400 text-xs px-3 py-1 rounded-full border border-yellow-500/30">
-              🔒 Protegido · Sin descarga
+            <span className="bg-yellow-500/20 text-yellow-400 text-xs px-3 py-1 rounded-full border border-yellow-500/30 flex items-center gap-1">
+              <LuLock size={12} /> Protegido · Sin descarga
             </span>
             <button onClick={onClose}
-              className="text-gray-400 hover:text-white text-xl px-2 transition-colors">
-              ✕
+              className="text-gray-400 hover:text-white px-2 transition-colors">
+              <LuX size={20} />
             </button>
           </div>
         </div>
@@ -74,7 +75,7 @@ function PDFViewerProtected({ url, name, clientName, projectCode, onClose }) {
         {/* Alerta */}
         {showAlert && (
           <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[60] bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2">
-            🚫 Acción bloqueada — Documento protegido
+            <LuBan size={16} /> Acción bloqueada — Documento protegido
           </div>
         )}
 
@@ -154,8 +155,8 @@ function PDFViewerProtected({ url, name, clientName, projectCode, onClose }) {
           <div
             className="absolute bottom-0 left-0 right-0 py-2 text-center select-none pointer-events-none"
             style={{ zIndex: 12, backgroundColor: 'rgba(0,0,0,0.75)' }}>
-            <p className="text-yellow-400 text-xs">
-              🔒 Documento confidencial · {clientName} · {projectCode} · Solo visualización — descarga no autorizada
+            <p className="text-yellow-400 text-xs flex items-center justify-center gap-1.5">
+              <LuLock size={12} /> Documento confidencial · {clientName} · {projectCode} · Solo visualización — descarga no autorizada
             </p>
           </div>
         </div>

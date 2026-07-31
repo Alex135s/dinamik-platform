@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FaWhatsapp, FaTimes, FaComments } from 'react-icons/fa'
+import { LuSend } from 'react-icons/lu'
 
 function Support({ project }) {
   const [open, setOpen] = useState(false)
@@ -102,7 +103,7 @@ function Support({ project }) {
             />
             <button onClick={handleSend}
               className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl text-xs font-medium">
-              ➤
+              <LuSend size={13} />
             </button>
           </div>
         </div>

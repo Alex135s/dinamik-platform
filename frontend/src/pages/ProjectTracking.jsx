@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { usePermissions } from '../hooks/usePermissions'
+import {
+  LuCircleCheckBig, LuCircleAlert, LuTriangleAlert, LuActivity, LuClipboardList,
+  LuHourglass, LuRefreshCw, LuCalendar, LuFlag, LuAlarmClock,
+} from 'react-icons/lu'
 
 // Calcula días entre dos fechas
 const daysBetween = (a, b) => Math.ceil((new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24))
@@ -11,10 +15,10 @@ const getHealth = (project, tasks) => {
   const hoy = new Date()
 
   if (project.status === 'completado')
-    return { color: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/30', label: 'Completado', icon: '✅' }
+    return { color: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/30', label: 'Completado', Icon: LuCircleCheckBig }
 
   if (project.endDate && new Date(project.endDate) < hoy)
-    return { color: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/30', label: 'Vencido', icon: '🔴' }
+    return { color: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/30', label: 'Vencido', Icon: LuCircleAlert }
 
   const total      = tasks.length
   const completadas = tasks.filter(t => t.status === 'completado').length
@@ -25,11 +29,11 @@ const getHealth = (project, tasks) => {
     const diasTranscurridos = daysBetween(project.startDate, hoy)
     const tiempoPct     = diasTotal > 0 ? (diasTranscurridos / diasTotal) * 100 : 0
     if (tiempoPct > pct + 30)
-      return { color: 'text-red-400',    bg: 'bg-red-500/20',    border: 'border-red-500/30',    label: 'En riesgo',  icon: '🔴' }
+      return { color: 'text-red-400',    bg: 'bg-red-500/20',    border: 'border-red-500/30',    label: 'En riesgo',  Icon: LuCircleAlert }
     if (tiempoPct > pct + 15)
-      return { color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/30', label: 'Atención',   icon: '🟡' }
+      return { color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/30', label: 'Atención',   Icon: LuTriangleAlert }
   }
-  return { color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/30', label: 'En curso', icon: '🟢' }
+  return { color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/30', label: 'En curso', Icon: LuActivity }
 }
 
 function ProjectTracking() {
@@ -114,16 +118,16 @@ function ProjectTracking() {
       {/* Resumen semáforo */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: '🟢 En curso',    value: resumen.enCurso,     color: 'text-green-400',  bg: 'bg-gray-800', key: 'en curso' },
-          { label: '🟡 Atención',    value: resumen.atencion,    color: 'text-yellow-400', bg: 'bg-gray-800', key: 'atención' },
-          { label: '🔴 En riesgo',   value: resumen.riesgo,      color: 'text-red-400',    bg: 'bg-gray-800', key: 'en riesgo' },
-          { label: '✅ Completados', value: resumen.completados, color: 'text-blue-400',   bg: 'bg-gray-800', key: 'completado' },
+          { label: 'En curso',    Icon: LuActivity,        value: resumen.enCurso,     color: 'text-green-400',  bg: 'bg-gray-800', key: 'en curso' },
+          { label: 'Atención',    Icon: LuTriangleAlert,   value: resumen.atencion,    color: 'text-yellow-400', bg: 'bg-gray-800', key: 'atención' },
+          { label: 'En riesgo',   Icon: LuCircleAlert,     value: resumen.riesgo,      color: 'text-red-400',    bg: 'bg-gray-800', key: 'en riesgo' },
+          { label: 'Completados', Icon: LuCircleCheckBig,  value: resumen.completados, color: 'text-blue-400',   bg: 'bg-gray-800', key: 'completado' },
         ].map(c => (
           <button key={c.key}
             onClick={() => setFilterHealth(filterHealth === c.key ? 'todos' : c.key)}
             className={`${c.bg} rounded-xl p-5 border transition-all text-left
               ${filterHealth === c.key ? 'border-orange-500' : 'border-gray-700 hover:border-gray-600'}`}>
-            <p className="text-gray-400 text-xs">{c.label}</p>
+            <p className="text-gray-400 text-xs flex items-center gap-1.5"><c.Icon size={13} /> {c.label}</p>
             <p className={`text-3xl font-bold mt-1 ${c.color}`}>{c.value}</p>
           </button>
         ))}
@@ -137,7 +141,7 @@ function ProjectTracking() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
-          <p className="text-4xl mb-3">📊</p>
+          <div className="flex justify-center mb-3 text-gray-500"><LuActivity size={40} /></div>
           <p className="text-gray-400 text-sm">No hay proyectos en esta categoría.</p>
         </div>
       ) : (
@@ -152,16 +156,16 @@ function ProjectTracking() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-white font-semibold">{p.name}</h3>
                     <span className="text-orange-500 text-xs font-mono">{p.projectCode}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.health.bg} ${p.health.color}`}>
-                      {p.health.icon} {p.health.label}
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${p.health.bg} ${p.health.color}`}>
+                      <p.health.Icon size={12} /> {p.health.label}
                     </span>
                   </div>
                   <p className="text-gray-400 text-xs mt-1">{p.client} · {p.serviceType}</p>
                 </div>
                 <button
                   onClick={() => navigate(`/projects/${p.id}/tasks`)}
-                  className="bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 ml-3">
-                  📋 Ver tareas
+                  className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 ml-3">
+                  <LuClipboardList size={13} /> Ver tareas
                 </button>
               </div>
 
@@ -180,9 +184,9 @@ function ProjectTracking() {
                     />
                   </div>
                   <div className="flex gap-3 text-xs">
-                    <span className="text-yellow-400">⏳ {p.pendientes} pendientes</span>
-                    <span className="text-blue-400">🔄 {p.enProgreso} en progreso</span>
-                    <span className="text-green-400">✅ {p.completadas} listas</span>
+                    <span className="text-yellow-400 flex items-center gap-1"><LuHourglass size={12} /> {p.pendientes} pendientes</span>
+                    <span className="text-blue-400 flex items-center gap-1"><LuRefreshCw size={12} /> {p.enProgreso} en progreso</span>
+                    <span className="text-green-400 flex items-center gap-1"><LuCircleCheckBig size={12} /> {p.completadas} listas</span>
                   </div>
                 </div>
 
@@ -202,12 +206,12 @@ function ProjectTracking() {
                         />
                       </div>
                       <div className="flex gap-3 text-xs">
-                        <span className="text-gray-400">📅 {p.diasTranscurridos} días transcurridos</span>
+                        <span className="text-gray-400 flex items-center gap-1"><LuCalendar size={12} /> {p.diasTranscurridos} días transcurridos</span>
                         {p.diasRestantes >= 0
-                          ? <span className={p.diasRestantes <= 7 ? 'text-red-400' : 'text-gray-400'}>
-                              ⏰ {p.diasRestantes} días restantes
+                          ? <span className={`flex items-center gap-1 ${p.diasRestantes <= 7 ? 'text-red-400' : 'text-gray-400'}`}>
+                              <LuAlarmClock size={12} /> {p.diasRestantes} días restantes
                             </span>
-                          : <span className="text-red-400">🔴 Venció hace {Math.abs(p.diasRestantes)} días</span>
+                          : <span className="text-red-400 flex items-center gap-1"><LuCircleAlert size={12} /> Venció hace {Math.abs(p.diasRestantes)} días</span>
                         }
                       </div>
                     </>
@@ -223,13 +227,13 @@ function ProjectTracking() {
               {(p.startDate || p.endDate) && (
                 <div className="flex gap-4 mt-3 pt-3 border-t border-gray-700">
                   {p.startDate && (
-                    <p className="text-gray-500 text-xs">🗓️ Inicio: <span className="text-gray-400">{p.startDate}</span></p>
+                    <p className="text-gray-500 text-xs flex items-center gap-1"><LuCalendar size={12} /> Inicio: <span className="text-gray-400">{p.startDate}</span></p>
                   )}
                   {p.endDate && (
-                    <p className="text-gray-500 text-xs">🏁 Fin: <span className="text-gray-400">{p.endDate}</span></p>
+                    <p className="text-gray-500 text-xs flex items-center gap-1"><LuFlag size={12} /> Fin: <span className="text-gray-400">{p.endDate}</span></p>
                   )}
                   {p.total > 0 && (
-                    <p className="text-gray-500 text-xs">📋 <span className="text-gray-400">{p.total} tareas totales</span></p>
+                    <p className="text-gray-500 text-xs flex items-center gap-1"><LuClipboardList size={12} /> <span className="text-gray-400">{p.total} tareas totales</span></p>
                   )}
                 </div>
               )}

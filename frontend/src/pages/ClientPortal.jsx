@@ -9,6 +9,7 @@ import Timeline from '../components/portal/Timeline'
 import Deliverables from '../components/portal/Deliverables'
 import ServicesGrid from '../components/portal/ServicesGrid'
 import Sidebar from '../components/portal/Sidebar'
+import { LuX } from 'react-icons/lu'
 
 function ClientPortal() {
   const [code, setCode]             = useState('')
@@ -172,7 +173,7 @@ function ClientPortal() {
             <div className="flex justify-between items-center mb-3">
               <p className="text-gray-900 font-semibold">{previewImg.name}</p>
               <button onClick={() => setPreviewImg(null)}
-                className="text-gray-400 hover:text-gray-900 text-xl px-2">✕</button>
+                className="text-gray-400 hover:text-gray-900 px-2"><LuX size={20} /></button>
             </div>
             <img src={previewImg.fileUrl} alt={previewImg.name}
               className="w-full rounded-lg object-contain max-h-[70vh]" />

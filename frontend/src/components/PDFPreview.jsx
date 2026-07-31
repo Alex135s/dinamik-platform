@@ -1,3 +1,5 @@
+import { LuFileText, LuDownload, LuExternalLink, LuX } from 'react-icons/lu'
+
 function PDFPreview({ url, name, onClose }) {
   return (
     <div
@@ -9,19 +11,19 @@ function PDFPreview({ url, name, onClose }) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 flex-shrink-0">
-          <p className="text-white font-semibold text-sm">📄 {name}</p>
+          <p className="text-white font-semibold text-sm flex items-center gap-2"><LuFileText size={16} /> {name}</p>
           <div className="flex items-center gap-2">
             <a href={url} target="_blank" rel="noopener noreferrer"
-              className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
-              ⬇ Descargar
+              className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
+              <LuDownload size={13} /> Descargar
             </a>
             <a href={url} target="_blank" rel="noopener noreferrer"
-              className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
-              🔗 Nueva pestaña
+              className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-2 rounded-lg transition-colors">
+              <LuExternalLink size={13} /> Nueva pestaña
             </a>
             <button onClick={onClose}
-              className="text-gray-400 hover:text-white text-xl px-2 transition-colors">
-              ✕
+              className="text-gray-400 hover:text-white px-2 transition-colors">
+              <LuX size={20} />
             </button>
           </div>
         </div>

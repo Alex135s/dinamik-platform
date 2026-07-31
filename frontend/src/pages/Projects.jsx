@@ -5,6 +5,12 @@ import { exportProjectsPDF, exportProjectsExcel } from '../utils/exportUtils'
 import Pagination from '../components/Pagination'
 import { usePermissions } from '../hooks/usePermissions'
 import { useNavigate } from 'react-router-dom'
+import {
+  LuLayoutGrid, LuList, LuFileText, LuFileSpreadsheet, LuPlus, LuX, LuSearch,
+  LuPencil, LuTrash2, LuMapPin, LuGlobe, LuLightbulb, LuHardHat, LuCuboid, LuMap,
+  LuClipboardCheck, LuBuilding2, LuCalendar, LuFlag, LuCircleAlert, LuTriangleAlert,
+  LuClock, LuClipboardList,
+} from 'react-icons/lu'
 import ShareProjectCode from '../components/ShareProjectCode'
 
 const SERVICE_TYPES = ['estructural', 'BIM', 'topografia', 'viabilidad', 'construccion']
@@ -17,17 +23,20 @@ const statusColors = {
 }
 
 const serviceIcons = {
-  estructural:  '🏗️',
-  BIM:          '💻',
-  topografia:   '🗺️',
-  viabilidad:   '📋',
-  construccion: '🏢',
+  estructural:  LuHardHat,
+  BIM:          LuCuboid,
+  topografia:   LuMap,
+  viabilidad:   LuClipboardCheck,
+  construccion: LuBuilding2,
 }
+
+const alertIcons = { vencido: LuCircleAlert, urgente: LuTriangleAlert, proximo: LuClock }
 
 const emptyForm = {
   name: '', client: '', serviceType: '', status: 'activo',
   startDate: '', endDate: '', progress: 0, assignedTo: '',
-  location: '', latitude: '', longitude: ''
+  location: '', latitude: '', longitude: '',
+  clientDocType: 'DNI', clientDocNumber: ''
 }
 
 const getAlertInfo = (endDate, status) => {
@@ -62,6 +71,7 @@ function Projects() {
   const [filterStatus, setFilterStatus]   = useState('todos')
   const [filterService, setFilterService] = useState('todos')
   const [filterLocation, setFilterLocation] = useState('todos')
+  const [searchingDoc, setSearchingDoc]   = useState(false)
 
   const fetchData = async () => {
     try {
@@ -120,8 +130,33 @@ function Projects() {
       progress: p.progress ?? 0, assignedTo: p.assignedTo || '',
       location: p.location || '',
       latitude: p.latitude || '', longitude: p.longitude || '',
+      clientDocType: p.clientDocType || 'DNI', clientDocNumber: p.clientDocNumber || '',
     })
     setShowForm(true)
+  }
+
+  const handleSearchDoc = async () => {
+    const number = form.clientDocNumber.trim()
+    const expectedLength = form.clientDocType === 'DNI' ? 8 : 11
+    if (number.length !== expectedLength || !/^\d+$/.test(number)) {
+      showToast(`El ${form.clientDocType} debe tener ${expectedLength} dígitos.`, 'warning')
+      return
+    }
+    setSearchingDoc(true)
+    try {
+      const endpoint = form.clientDocType === 'DNI' ? 'dni' : 'ruc'
+      const res = await axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/lookup/${endpoint}/${number}`)
+      if (res.data?.found) {
+        setForm(f => ({ ...f, client: res.data.name }))
+        showToast('Cliente encontrado y autocompletado.', 'success')
+      } else {
+        showToast(res.data?.error || `No se encontró el ${form.clientDocType}.`, 'warning')
+      }
+    } catch {
+      showToast('Error al consultar el documento.', 'error')
+    } finally {
+      setSearchingDoc(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -142,6 +177,8 @@ function Projects() {
         location: form.location || null,
         latitude: form.latitude ? parseFloat(form.latitude) : null,
         longitude: form.longitude ? parseFloat(form.longitude) : null,
+        clientDocType: form.clientDocNumber ? form.clientDocType : null,
+        clientDocNumber: form.clientDocNumber || null,
       }
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_PROJECTS_API}/api/projects/${editingId}`, payload)
@@ -184,32 +221,32 @@ function Projects() {
           {/* Toggle vista */}
           <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
             <button onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
                 ${viewMode === 'cards' ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-white'}`}>
-              ⊞ Cards
+              <LuLayoutGrid size={14} /> Cards
             </button>
             <button onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
                 ${viewMode === 'list' ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-white'}`}>
-              ☰ Lista
+              <LuList size={14} /> Lista
             </button>
           </div>
           {perms.projects.canExport && (
             <>
               <button onClick={() => exportProjectsPDF(projects)} disabled={projects.length === 0}
-                className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                📄 PDF
+                className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                <LuFileText size={15} /> PDF
               </button>
               <button onClick={() => exportProjectsExcel(projects)} disabled={projects.length === 0}
-                className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                📊 Excel
+                className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                <LuFileSpreadsheet size={15} /> Excel
               </button>
             </>
           )}
           {perms.projects.canCreate && (
             <button onClick={openNew}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-              + Nuevo Proyecto
+              className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+              <LuPlus size={15} /> Nuevo Proyecto
             </button>
           )}
         </div>
@@ -220,10 +257,11 @@ function Projects() {
         <div className="mb-6 grid gap-2">
           {alertas.map(p => {
             const alert = getAlertInfo(p.endDate, p.status)
+            const AlertIcon = alertIcons[alert.tipo]
             return (
               <div key={p.id} className={`rounded-xl px-5 py-3 border flex items-center justify-between ${alert.color}`}>
                 <div className="flex items-center gap-3">
-                  <span>{alert.tipo === 'vencido' ? '🔴' : alert.tipo === 'urgente' ? '🟠' : '🟡'}</span>
+                  <AlertIcon size={18} className="flex-shrink-0" />
                   <div>
                     <p className="text-sm font-semibold">{p.name}</p>
                     <p className="text-xs opacity-80">{p.client} · {alert.label}</p>
@@ -243,7 +281,7 @@ function Projects() {
       <div className="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-700">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+            <LuSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input placeholder="Buscar nombre, cliente, lugar..."
               value={search}
               onChange={e => handleFilterChange(() => setSearch(e.target.value))}
@@ -252,32 +290,32 @@ function Projects() {
           <select value={filterStatus}
             onChange={e => handleFilterChange(() => setFilterStatus(e.target.value))}
             className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
-            <option value="todos">📋 Todos los estados</option>
-            <option value="activo">🟢 Activo</option>
-            <option value="en_proceso">🟡 En proceso</option>
-            <option value="completado">🔵 Completado</option>
+            <option value="todos">Todos los estados</option>
+            <option value="activo">Activo</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="completado">Completado</option>
           </select>
           <select value={filterService}
             onChange={e => handleFilterChange(() => setFilterService(e.target.value))}
             className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
-            <option value="todos">🔧 Todos los servicios</option>
+            <option value="todos">Todos los servicios</option>
             {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <select value={filterLocation}
             onChange={e => handleFilterChange(() => setFilterLocation(e.target.value))}
             className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
-            <option value="todos">📍 Todas las ubicaciones</option>
+            <option value="todos">Todas las ubicaciones</option>
             {cities.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         {hayFiltros && (
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-700">
-            <p className="text-orange-400 text-xs">
-              🔍 {filteredProjects.length} resultado{filteredProjects.length !== 1 ? 's' : ''}
+            <p className="text-orange-400 text-xs flex items-center gap-1.5">
+              <LuSearch size={13} /> {filteredProjects.length} resultado{filteredProjects.length !== 1 ? 's' : ''}
             </p>
             <button onClick={resetFiltros}
-              className="text-gray-400 hover:text-white text-xs bg-gray-700 px-3 py-1 rounded-lg">
-              ✕ Limpiar filtros
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs bg-gray-700 px-3 py-1 rounded-lg">
+              <LuX size={13} /> Limpiar filtros
             </button>
           </div>
         )}
@@ -286,13 +324,37 @@ function Projects() {
       {/* Formulario */}
       {showForm && (
         <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-orange-500/30">
-          <h2 className="text-white font-semibold mb-4">
-            {editingId ? '✏️ Editar Proyecto' : '➕ Nuevo Proyecto'}
+          <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
+            {editingId ? <LuPencil size={16} /> : <LuPlus size={16} />}
+            {editingId ? 'Editar Proyecto' : 'Nuevo Proyecto'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input placeholder="Nombre del proyecto *" value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm col-span-2 border border-gray-600 focus:border-orange-500 outline-none" />
+
+            {/* Documento del cliente (DNI / RUC) */}
+            <div className="col-span-2">
+              <label className="text-gray-400 text-xs mb-1 block">Buscar cliente por documento</label>
+              <div className="flex gap-2">
+                <select value={form.clientDocType}
+                  onChange={e => setForm({ ...form, clientDocType: e.target.value, clientDocNumber: '' })}
+                  className="bg-gray-700 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
+                  <option value="DNI">DNI</option>
+                  <option value="RUC">RUC</option>
+                </select>
+                <input placeholder={form.clientDocType === 'DNI' ? '8 dígitos' : '11 dígitos'}
+                  value={form.clientDocNumber}
+                  maxLength={form.clientDocType === 'DNI' ? 8 : 11}
+                  onChange={e => setForm({ ...form, clientDocNumber: e.target.value.replace(/\D/g, '') })}
+                  className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
+                <button type="button" onClick={handleSearchDoc} disabled={searchingDoc}
+                  className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
+                  {searchingDoc ? 'Buscando...' : 'Buscar'}
+                </button>
+              </div>
+            </div>
+
             <input placeholder="Cliente *" value={form.client}
               onChange={e => setForm({ ...form, client: e.target.value })}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
@@ -311,32 +373,33 @@ function Projects() {
               <select value={form.assignedTo}
                 onChange={e => setForm({ ...form, assignedTo: e.target.value })}
                 className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
-                <option value="">👷 Sin técnico asignado</option>
-                {users.map(u => <option key={u.id} value={u.id}>👷 {u.name}</option>)}
+                <option value="">Sin técnico asignado</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             )}
 
             {/* Ubicación */}
             <div className="col-span-2">
-              <label className="text-gray-400 text-xs mb-1 block">📍 Ubicación del proyecto</label>
+              <label className="text-gray-400 text-xs mb-1 flex items-center gap-1"><LuMapPin size={12} /> Ubicación del proyecto</label>
               <input placeholder="Ej: Av. Javier Prado 123, San Isidro, Lima" value={form.location}
                 onChange={e => setForm({ ...form, location: e.target.value })}
                 className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
             </div>
             <div>
-              <label className="text-gray-400 text-xs mb-1 block">🌐 Latitud</label>
+              <label className="text-gray-400 text-xs mb-1 flex items-center gap-1"><LuGlobe size={12} /> Latitud</label>
               <input placeholder="-12.0464" value={form.latitude}
                 onChange={e => setForm({ ...form, latitude: e.target.value })}
                 className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
             </div>
             <div>
-              <label className="text-gray-400 text-xs mb-1 block">🌐 Longitud</label>
+              <label className="text-gray-400 text-xs mb-1 flex items-center gap-1"><LuGlobe size={12} /> Longitud</label>
               <input placeholder="-77.0428" value={form.longitude}
                 onChange={e => setForm({ ...form, longitude: e.target.value })}
                 className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
             </div>
-            <p className="text-gray-500 text-xs col-span-2">
-              💡 Para obtener latitud/longitud: ve a Google Maps, haz clic derecho en la ubicación → "¿Qué hay aquí?" y copia las coordenadas.
+            <p className="text-gray-500 text-xs col-span-2 flex items-start gap-1.5">
+              <LuLightbulb size={13} className="flex-shrink-0 mt-0.5" />
+              Para obtener latitud/longitud: ve a Google Maps, haz clic derecho en la ubicación → "¿Qué hay aquí?" y copia las coordenadas.
             </p>
 
             <div>
@@ -381,7 +444,9 @@ function Projects() {
         <p className="text-gray-400 text-sm">Cargando proyectos...</p>
       ) : filteredProjects.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
-          <p className="text-4xl mb-3">{hayFiltros ? '🔍' : '🏗️'}</p>
+          <div className="flex justify-center mb-3 text-gray-500">
+            {hayFiltros ? <LuSearch size={40} /> : <LuHardHat size={40} />}
+          </div>
           <p className="text-gray-400 text-sm">
             {hayFiltros ? 'No se encontraron proyectos.' : 'No hay proyectos aún.'}
           </p>
@@ -397,6 +462,8 @@ function Projects() {
             const colors  = statusColors[p.status] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
             const alert   = getAlertInfo(p.endDate, p.status)
             const tecnico = getUserName(p.assignedTo)
+            const ServiceIcon = serviceIcons[p.serviceType] || LuHardHat
+            const AlertIcon = alert ? alertIcons[alert.tipo] : null
             return (
               <div key={p.id}
                 className={`bg-gray-800 rounded-xl p-5 border flex flex-col transition-all hover:border-orange-500/50
@@ -405,8 +472,8 @@ function Projects() {
 
                 {/* Header card */}
                 <div className="flex items-start justify-between mb-3">
-                  <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                    {serviceIcons[p.serviceType] || '🏗️'}
+                  <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-400 flex-shrink-0">
+                    <ServiceIcon size={22} />
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${colors.bg} ${colors.text}`}>
                     {p.status}
@@ -419,10 +486,13 @@ function Projects() {
                   <p className="text-orange-500 text-xs font-mono">{p.projectCode}</p>
                   <ShareProjectCode code={p.projectCode} projectName={p.name} client={p.client} />
                 </div>
-                <p className="text-gray-400 text-xs mt-1 truncate">{p.client}</p>
+                <p className="text-gray-400 text-xs mt-1 truncate">
+                  {p.client}
+                  {p.clientDocNumber && <span className="text-gray-500"> · {p.clientDocType} {p.clientDocNumber}</span>}
+                </p>
                 {p.location && (
                   <p className="text-gray-500 text-xs mt-1 flex items-center gap-1">
-                    📍 <span className="truncate">{p.location}</span>
+                    <LuMapPin size={12} className="flex-shrink-0" /> <span className="truncate">{p.location}</span>
                   </p>
                 )}
 
@@ -456,44 +526,44 @@ function Projects() {
 
                 {/* Alerta */}
                 {alert && (
-                  <div className={`mt-2 text-xs px-2 py-1 rounded-lg ${alert.color}`}>
-                    {alert.tipo === 'vencido' ? '🔴' : alert.tipo === 'urgente' ? '🟠' : '🟡'} {alert.label}
+                  <div className={`mt-2 text-xs px-2 py-1 rounded-lg flex items-center gap-1.5 ${alert.color}`}>
+                    <AlertIcon size={13} className="flex-shrink-0" /> {alert.label}
                   </div>
                 )}
 
                 {/* Técnico */}
                 {tecnico && (
-                  <p className="text-blue-400 text-xs mt-2">👷 {tecnico}</p>
+                  <p className="text-blue-400 text-xs mt-2 flex items-center gap-1"><LuHardHat size={12} /> {tecnico}</p>
                 )}
 
                 {/* Fechas */}
                 {(p.startDate || p.endDate) && (
                   <div className="flex gap-3 mt-2 text-xs text-gray-500">
-                    {p.startDate && <span>📅 {p.startDate}</span>}
-                    {p.endDate   && <span>🏁 {p.endDate}</span>}
+                    {p.startDate && <span className="flex items-center gap-1"><LuCalendar size={12} /> {p.startDate}</span>}
+                    {p.endDate   && <span className="flex items-center gap-1"><LuFlag size={12} /> {p.endDate}</span>}
                   </div>
                 )}
 
                 {/* Botones */}
                 <div className="flex gap-2 mt-4 pt-3 border-t border-gray-700">
                   <button onClick={() => navigate(`/projects/${p.id}/detail`)}
-                    className="flex-1 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs py-1.5 rounded-lg transition-colors">
-                    🔍 Detalle
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs py-1.5 rounded-lg transition-colors">
+                    <LuSearch size={13} /> Detalle
                   </button>
                   <button onClick={() => navigate(`/projects/${p.id}/tasks`)}
-                    className="flex-1 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs py-1.5 rounded-lg transition-colors">
-                    📋 Tareas
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs py-1.5 rounded-lg transition-colors">
+                    <LuClipboardList size={13} /> Tareas
                   </button>
                   {perms.projects.canEdit && (
                     <button onClick={() => openEdit(p)}
-                      className="flex-1 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs py-1.5 rounded-lg transition-colors">
-                      ✏️ Editar
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs py-1.5 rounded-lg transition-colors">
+                      <LuPencil size={13} /> Editar
                     </button>
                   )}
                   {perms.projects.canDelete && (
                     <button onClick={() => handleDelete(p.id, p.name)} disabled={deletingId === p.id}
-                      className="bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                      {deletingId === p.id ? '...' : '🗑'}
+                      className="flex items-center justify-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                      {deletingId === p.id ? '...' : <LuTrash2 size={13} />}
                     </button>
                   )}
                 </div>
@@ -508,6 +578,7 @@ function Projects() {
             const colors  = statusColors[p.status] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
             const alert   = getAlertInfo(p.endDate, p.status)
             const tecnico = getUserName(p.assignedTo)
+            const AlertIcon = alert ? alertIcons[alert.tipo] : null
             return (
               <div key={p.id}
                 className={`bg-gray-800 rounded-xl px-5 py-4 border flex items-center justify-between hover:border-gray-600 transition-colors
@@ -519,17 +590,20 @@ function Projects() {
                     {p.projectCode && <span className="text-orange-500 text-xs font-mono">{p.projectCode}</span>}
                     {p.projectCode && <ShareProjectCode code={p.projectCode} projectName={p.name} client={p.client} />}
                     {alert && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full border ${alert.color}`}>
-                        {alert.tipo === 'vencido' ? '🔴' : alert.tipo === 'urgente' ? '🟠' : '🟡'} {alert.label}
+                      <span className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${alert.color}`}>
+                        <AlertIcon size={12} /> {alert.label}
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-400 text-xs mt-1">{p.client} · {p.serviceType}</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    {p.client} · {p.serviceType}
+                    {p.clientDocNumber && <span className="text-gray-500"> · {p.clientDocType} {p.clientDocNumber}</span>}
+                  </p>
                   <div className="flex items-center gap-4 mt-1 flex-wrap">
-                    {p.location && <p className="text-gray-500 text-xs">📍 {p.location}</p>}
-                    {p.startDate && <p className="text-gray-500 text-xs">📅 {p.startDate}</p>}
-                    {p.endDate   && <p className="text-gray-500 text-xs">🏁 {p.endDate}</p>}
-                    {tecnico     && <p className="text-blue-400 text-xs">👷 {tecnico}</p>}
+                    {p.location && <p className="text-gray-500 text-xs flex items-center gap-1"><LuMapPin size={12} /> {p.location}</p>}
+                    {p.startDate && <p className="text-gray-500 text-xs flex items-center gap-1"><LuCalendar size={12} /> {p.startDate}</p>}
+                    {p.endDate   && <p className="text-gray-500 text-xs flex items-center gap-1"><LuFlag size={12} /> {p.endDate}</p>}
+                    {tecnico     && <p className="text-blue-400 text-xs flex items-center gap-1"><LuHardHat size={12} /> {tecnico}</p>}
                   </div>
                   {p.progress > 0 && (
                     <div className="mt-2 flex items-center gap-2">
@@ -545,19 +619,19 @@ function Projects() {
                     {p.status}
                   </span>
                   <button onClick={() => navigate(`/projects/${p.id}/tasks`)}
-                    className="bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                    📋 Tareas
+                    className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                    <LuClipboardList size={13} /> Tareas
                   </button>
                   {perms.projects.canEdit && (
                     <button onClick={() => openEdit(p)}
-                      className="bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                      ✏️ Editar
+                      className="flex items-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                      <LuPencil size={13} /> Editar
                     </button>
                   )}
                   {perms.projects.canDelete && (
                     <button onClick={() => handleDelete(p.id, p.name)} disabled={deletingId === p.id}
-                      className="bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                      {deletingId === p.id ? '...' : '🗑'}
+                      className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                      {deletingId === p.id ? '...' : <LuTrash2 size={13} />}
                     </button>
                   )}
                 </div>

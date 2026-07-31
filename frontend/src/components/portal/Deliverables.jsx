@@ -1,5 +1,6 @@
 import Eyebrow from './Eyebrow'
 import { typeIcons, typeLabels, typeAccent, isNew, isPDF } from './portalData'
+import { LuInbox, LuEye, LuLock } from 'react-icons/lu'
 
 function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
   return (
@@ -14,7 +15,7 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
 
       {docs.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm text-center mb-8">
-          <p className="text-3xl mb-3">📭</p>
+          <div className="flex justify-center mb-3 text-gray-300"><LuInbox size={32} /></div>
           <p className="text-gray-500 text-sm">Aún no hay entregables disponibles.</p>
         </div>
       ) : (
@@ -22,10 +23,11 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
           {['plano_pdf', 'plano_cad', 'imagen_3d', 'informe', 'otro'].map(tipo => {
             const grupo = docs.filter(d => d.type === tipo)
             if (grupo.length === 0) return null
+            const TypeIcon = typeIcons[tipo]
             return (
               <div key={tipo} className="mb-6">
-                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
-                  {typeIcons[tipo]} {typeLabels[tipo]}
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <TypeIcon size={13} /> {typeLabels[tipo]}
                 </p>
                 <div className="grid gap-2">
                   {grupo.map(d => (
@@ -38,8 +40,8 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
                             className="w-11 h-11 object-cover rounded-xl border border-gray-200 cursor-pointer flex-shrink-0"
                             onClick={() => onImg(d)} />
                         ) : (
-                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${typeAccent[tipo]}`}>
-                            {typeIcons[tipo]}
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${typeAccent[tipo]}`}>
+                            <TypeIcon size={18} />
                           </div>
                         )}
                         <div className="min-w-0">
@@ -64,14 +66,14 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
                       <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                         {isPDF(d.type) && d.fileUrl && (
                           <button onClick={() => onPdf(d)}
-                            className="bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-600 text-xs px-3 py-2 rounded-lg transition-colors border border-gray-200">
-                            👁 Ver PDF
+                            className="flex items-center gap-1.5 bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-600 text-xs px-3 py-2 rounded-lg transition-colors border border-gray-200">
+                            <LuEye size={13} /> Ver PDF
                           </button>
                         )}
                         {tipo === 'imagen_3d' && d.fileUrl && (
                           <button onClick={() => onImg(d)}
-                            className="bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-600 text-xs px-3 py-2 rounded-lg transition-colors border border-gray-200">
-                            👁 Ver
+                            className="flex items-center gap-1.5 bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-600 text-xs px-3 py-2 rounded-lg transition-colors border border-gray-200">
+                            <LuEye size={13} /> Ver
                           </button>
                         )}
                         <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
@@ -92,16 +94,18 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
       {docsDeshabilitados.length > 0 && (
         <div className="mb-8">
           <h3 className="text-gray-500 font-semibold mb-3 flex items-center gap-2">
-            🔒 Solo visualización
+            <LuLock size={16} /> Solo visualización
             <span className="text-xs font-normal text-gray-400">(sin descarga)</span>
           </h3>
           <div className="grid gap-2">
-            {docsDeshabilitados.map(d => (
+            {docsDeshabilitados.map(d => {
+              const TypeIcon = typeIcons[d.type]
+              return (
               <div key={d.id}
                 className="bg-gray-50 rounded-2xl px-5 py-4 border border-gray-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${typeAccent[d.type] || 'bg-gray-100 text-gray-500'}`}>
-                    {typeIcons[d.type]}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${typeAccent[d.type] || 'bg-gray-100 text-gray-500'}`}>
+                    <TypeIcon size={17} />
                   </div>
                   <div>
                     <p className="text-gray-700 text-sm font-medium">{d.name}</p>
@@ -109,11 +113,12 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
                   </div>
                 </div>
                 <button onClick={() => onPdf(d)}
-                  className="bg-white hover:bg-gray-100 text-gray-500 hover:text-gray-900 text-xs px-3 py-2 rounded-lg border border-gray-200">
-                  👁 Ver (sin descarga)
+                  className="flex items-center gap-1.5 bg-white hover:bg-gray-100 text-gray-500 hover:text-gray-900 text-xs px-3 py-2 rounded-lg border border-gray-200">
+                  <LuEye size={13} /> Ver (sin descarga)
                 </button>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

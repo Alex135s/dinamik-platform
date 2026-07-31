@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import { LuPlus, LuRefreshCw, LuTrash2 } from 'react-icons/lu'
 
 const ROLES = ['admin', 'tecnico']
 
@@ -102,15 +103,15 @@ function Users() {
         </div>
         <button
           onClick={() => { setForm(emptyForm); setShowForm(!showForm) }}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          + Nuevo Usuario
+          className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <LuPlus size={15} /> Nuevo Usuario
         </button>
       </div>
 
       {/* Formulario */}
       {showForm && (
         <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-orange-500/30">
-          <h2 className="text-white font-semibold mb-4">➕ Nuevo Usuario</h2>
+          <h2 className="text-white font-semibold mb-4 flex items-center gap-2"><LuPlus size={16} /> Nuevo Usuario</h2>
           <div className="grid grid-cols-2 gap-4">
             <input
               placeholder="Nombre completo *"
@@ -200,14 +201,14 @@ function Users() {
                     <>
                       <button
                         onClick={() => handleChangeRole(u.id, u.role, u.name)}
-                        className="bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                        🔄 Cambiar Rol
+                        className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                        <LuRefreshCw size={13} /> Cambiar Rol
                       </button>
                       <button
                         onClick={() => handleDelete(u.id, u.name)}
                         disabled={deletingId === u.id}
-                        className="bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                        {deletingId === u.id ? '...' : '🗑'}
+                        className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                        {deletingId === u.id ? '...' : <LuTrash2 size={13} />}
                       </button>
                     </>
                   )}

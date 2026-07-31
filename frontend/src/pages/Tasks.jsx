@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
 import { usePermissions } from '../hooks/usePermissions'
+import {
+  LuArrowLeft, LuClipboardList, LuHourglass, LuRefreshCw, LuCircleCheckBig, LuPlus,
+  LuPencil, LuHardHat, LuCircleAlert, LuTrash2, LuCircle, LuCalendar,
+} from 'react-icons/lu'
 
 const STATUS_TASK = ['pendiente', 'en_progreso', 'completado']
 const PRIORITY    = ['baja', 'media', 'alta']
@@ -19,7 +23,7 @@ const priorityColors = {
   alta:  { bg: 'bg-red-500/20',    text: 'text-red-400'    },
 }
 
-const priorityIcons = { baja: '🔵', media: '🟡', alta: '🔴' }
+const priorityIcons = { baja: LuCircle, media: LuCircle, alta: LuCircle }
 
 const emptyForm = {
   title: '', description: '', status: 'pendiente',
@@ -154,8 +158,8 @@ function Tasks() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <button onClick={() => navigate('/projects')}
-          className="text-gray-400 hover:text-white text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors">
-          ← Proyectos
+          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors">
+          <LuArrowLeft size={14} /> Proyectos
         </button>
         <h1 className="text-2xl font-bold text-white">Tareas</h1>
       </div>
@@ -196,9 +200,14 @@ function Tasks() {
                   ? 'bg-orange-500 text-white'
                   : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700'
                 }`}>
-              {s === 'todos' ? '📋 Todas' :
-               s === 'pendiente' ? '⏳ Pendiente' :
-               s === 'en_progreso' ? '🔄 En progreso' : '✅ Completadas'}
+              <span className="inline-flex items-center gap-1.5">
+                {s === 'todos' ? <LuClipboardList size={13} /> :
+                 s === 'pendiente' ? <LuHourglass size={13} /> :
+                 s === 'en_progreso' ? <LuRefreshCw size={13} /> : <LuCircleCheckBig size={13} />}
+                {s === 'todos' ? 'Todas' :
+                 s === 'pendiente' ? 'Pendiente' :
+                 s === 'en_progreso' ? 'En progreso' : 'Completadas'}
+              </span>
               <span className="ml-1 opacity-70">
                 {s === 'todos' ? tasks.length : tasks.filter(t => t.status === s).length}
               </span>
@@ -207,8 +216,8 @@ function Tasks() {
         </div>
         {perms.tasks.canCreate && (
           <button onClick={openNew}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-            + Nueva Tarea
+            className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuPlus size={15} /> Nueva Tarea
           </button>
         )}
       </div>
@@ -216,8 +225,9 @@ function Tasks() {
       {/* Formulario crear/editar */}
       {showForm && (
         <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-orange-500/30">
-          <h2 className="text-white font-semibold mb-4">
-            {editingId ? '✏️ Editar Tarea' : '➕ Nueva Tarea'}
+          <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
+            {editingId ? <LuPencil size={16} /> : <LuPlus size={16} />}
+            {editingId ? 'Editar Tarea' : 'Nueva Tarea'}
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <input placeholder="Título de la tarea *" value={form.title}
@@ -230,7 +240,7 @@ function Tasks() {
             <select value={form.priority}
               onChange={e => setForm({ ...form, priority: e.target.value })}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
-              {PRIORITY.map(p => <option key={p} value={p}>{priorityIcons[p]} {p}</option>)}
+              {PRIORITY.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             <select value={form.status}
               onChange={e => setForm({ ...form, status: e.target.value })}
@@ -240,9 +250,9 @@ function Tasks() {
             <select value={form.assignedTo}
               onChange={e => setForm({ ...form, assignedTo: e.target.value })}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
-              <option value="">👤 Sin asignar</option>
+              <option value="">Sin asignar</option>
               {users.map(u => (
-                <option key={u.id} value={u.name}>👷 {u.name}</option>
+                <option key={u.id} value={u.name}>{u.name}</option>
               ))}
             </select>
             <div>
@@ -270,7 +280,7 @@ function Tasks() {
         <p className="text-gray-400 text-sm">Cargando tareas...</p>
       ) : filteredTasks.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
-          <p className="text-4xl mb-3">📋</p>
+          <div className="flex justify-center mb-3 text-gray-500"><LuClipboardList size={40} /></div>
           <p className="text-gray-400 text-sm">
             {filterStatus === 'todos' ? 'No hay tareas aún.' : `No hay tareas "${filterStatus}".`}
           </p>
@@ -281,6 +291,7 @@ function Tasks() {
             const sc = statusColors[t.status]     || statusColors.pendiente
             const pc = priorityColors[t.priority] || priorityColors.media
             const isVencida = t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completado'
+            const PriorityIcon = priorityIcons[t.priority] || LuCircle
             return (
               <div key={t.id}
                 className={`bg-gray-800 rounded-xl px-5 py-4 border transition-all
@@ -291,12 +302,12 @@ function Tasks() {
                       <p className={`text-sm font-medium ${t.status === 'completado' ? 'line-through text-gray-500' : 'text-white'}`}>
                         {t.title}
                       </p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${pc.bg} ${pc.text}`}>
-                        {priorityIcons[t.priority]} {t.priority}
+                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${pc.bg} ${pc.text}`}>
+                        <PriorityIcon size={9} className="fill-current" /> {t.priority}
                       </span>
                       {isVencida && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
-                          🔴 Vencida
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 flex items-center gap-1">
+                          <LuCircleAlert size={11} /> Vencida
                         </span>
                       )}
                     </div>
@@ -305,13 +316,13 @@ function Tasks() {
                     )}
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       {t.assignedTo && (
-                        <span className="text-blue-400 text-xs bg-blue-500/10 px-2 py-0.5 rounded-full">
-                          👷 {t.assignedTo}
+                        <span className="text-blue-400 text-xs bg-blue-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <LuHardHat size={11} /> {t.assignedTo}
                         </span>
                       )}
                       {t.dueDate && (
-                        <span className={`text-xs ${isVencida ? 'text-red-400' : 'text-gray-400'}`}>
-                          📅 {t.dueDate}
+                        <span className={`text-xs flex items-center gap-1 ${isVencida ? 'text-red-400' : 'text-gray-400'}`}>
+                          <LuCalendar size={11} /> {t.dueDate}
                         </span>
                       )}
                     </div>
@@ -324,14 +335,14 @@ function Tasks() {
                     </select>
                     {perms.tasks.canCreate && (
                       <button onClick={() => openEdit(t)}
-                        className="bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                        ✏️
+                        className="flex items-center bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                        <LuPencil size={13} />
                       </button>
                     )}
                     {perms.tasks.canDelete && (
                       <button onClick={() => handleDelete(t.id, t.title)} disabled={deletingId === t.id}
-                        className="bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                        {deletingId === t.id ? '...' : '🗑'}
+                        className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                        {deletingId === t.id ? '...' : <LuTrash2 size={13} />}
                       </button>
                     )}
                   </div>

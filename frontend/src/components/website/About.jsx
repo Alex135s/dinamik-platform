@@ -1,35 +1,37 @@
+import { LuLandmark, LuCalculator, LuCuboid, LuHardHat, LuTarget, LuHandshake, LuRocket, LuTelescope } from 'react-icons/lu'
+
 function About() {
   const team = [
     {
       name: 'Equipo de Arquitectura',
       role: 'Diseño y planificación',
-      icon: '🏛️',
+      icon: LuLandmark,
       desc: 'Especialistas en diseño arquitectónico integrado con enfoque en funcionalidad y estética.'
     },
     {
       name: 'Equipo Estructural',
       role: 'Ingeniería y cálculo',
-      icon: '⚙️',
+      icon: LuCalculator,
       desc: 'Ingenieros especializados en estructuras sismorresistentes optimizadas para el contexto peruano.'
     },
     {
       name: 'Equipo BIM',
       role: 'Modelado y coordinación',
-      icon: '💻',
+      icon: LuCuboid,
       desc: 'Expertos en metodología BIM para coordinación digital y detección temprana de interferencias.'
     },
     {
       name: 'Equipo de Obra',
       role: 'Ejecución y supervisión',
-      icon: '🦺',
+      icon: LuHardHat,
       desc: 'Profesionales en campo garantizando calidad, plazos y presupuesto en cada etapa constructiva.'
     },
   ]
 
   const values = [
-    { icon: '🎯', title: 'Precisión', desc: 'Cada detalle importa en ingeniería. Trabajamos con exactitud técnica en cada proyecto.' },
-    { icon: '🤝', title: 'Confianza', desc: 'Construimos relaciones duraderas basadas en transparencia y cumplimiento.' },
-    { icon: '🚀', title: 'Innovación', desc: 'Adoptamos tecnología de vanguardia como BIM y drones para mejores resultados.' },
+    { icon: LuTarget, title: 'Precisión', desc: 'Cada detalle importa en ingeniería. Trabajamos con exactitud técnica en cada proyecto.' },
+    { icon: LuHandshake, title: 'Confianza', desc: 'Construimos relaciones duraderas basadas en transparencia y cumplimiento.' },
+    { icon: LuRocket, title: 'Innovación', desc: 'Adoptamos tecnología de vanguardia como BIM y drones para mejores resultados.' },
   ]
 
   return (
@@ -50,7 +52,7 @@ function About() {
         <div className="grid md:grid-cols-2 gap-8 mb-16">
           <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-all">
             <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mb-4">
-              <span className="text-white text-xl">🎯</span>
+              <LuTarget size={22} className="text-white" />
             </div>
             <h3 className="text-gray-900 font-bold text-xl mb-3">Nuestra Misión</h3>
             <p className="text-gray-500 leading-relaxed">
@@ -61,7 +63,7 @@ function About() {
           </div>
           <div className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-all">
             <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
-              <span className="text-white text-xl">🔭</span>
+              <LuTelescope size={22} className="text-white" />
             </div>
             <h3 className="text-gray-900 font-bold text-xl mb-3">Nuestra Visión</h3>
             <p className="text-gray-500 leading-relaxed">
@@ -76,7 +78,7 @@ function About() {
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           {values.map((v, i) => (
             <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 text-center hover:border-orange-200 hover:shadow-lg transition-all">
-              <span className="text-4xl">{v.icon}</span>
+              <div className="flex justify-center text-orange-500"><v.icon size={38} /></div>
               <h3 className="text-gray-900 font-bold text-lg mt-4">{v.title}</h3>
               <p className="text-gray-500 text-sm mt-2 leading-relaxed">{v.desc}</p>
             </div>
@@ -91,8 +93,8 @@ function About() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {team.map((t, i) => (
             <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all text-center">
-              <div className="w-16 h-16 bg-gray-950 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">{t.icon}</span>
+              <div className="w-16 h-16 bg-gray-950 rounded-2xl flex items-center justify-center mx-auto mb-4 text-orange-400">
+                <t.icon size={28} />
               </div>
               <h4 className="text-gray-900 font-bold text-sm">{t.name}</h4>
               <p className="text-orange-500 text-xs font-medium mt-1">{t.role}</p>

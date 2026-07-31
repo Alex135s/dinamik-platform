@@ -1,7 +1,11 @@
 // Datos y helpers compartidos del portal del cliente
+import {
+  LuFileText, LuPencilRuler, LuCuboid, LuClipboardList, LuPaperclip,
+  LuHardHat, LuSearch, LuBuilding2, LuRuler,
+} from 'react-icons/lu'
 
 export const typeIcons = {
-  plano_pdf: '📄', plano_cad: '📐', imagen_3d: '🏗️', informe: '📋', otro: '📎',
+  plano_pdf: LuFileText, plano_cad: LuPencilRuler, imagen_3d: LuCuboid, informe: LuClipboardList, otro: LuPaperclip,
 }
 
 export const typeLabels = {
@@ -27,12 +31,12 @@ export const taskStatusInfo = {
 }
 
 export const SERVICIOS = [
-  { icon: '🏗️', title: 'Diseño Estructural',    desc: 'Estructuras sismorresistentes optimizadas.',   tag: 'Ingeniería',  iconBg: 'bg-orange-100 text-orange-600', hover: 'hover:border-orange-300' },
-  { icon: '💻', title: 'Metodología BIM',         desc: 'Coordinación digital antes de construir.',     tag: 'Tecnología',  iconBg: 'bg-blue-100 text-blue-600',     hover: 'hover:border-blue-300'   },
-  { icon: '📋', title: 'Expedientes Técnicos',    desc: 'Licencias de construcción y habilitaciones.',  tag: 'Trámites',    iconBg: 'bg-green-100 text-green-600',   hover: 'hover:border-green-300'  },
-  { icon: '🔍', title: 'Estudio de Suelos',       desc: 'Geotecnia y topografía de precisión.',         tag: 'Geotecnia',   iconBg: 'bg-amber-100 text-amber-600',   hover: 'hover:border-amber-300'  },
-  { icon: '🏢', title: 'Construcción y Control',  desc: 'Supervisión técnica con control de calidad.',  tag: 'Supervisión', iconBg: 'bg-purple-100 text-purple-600', hover: 'hover:border-purple-300' },
-  { icon: '📐', title: 'Topografía',              desc: 'Levantamientos y fotogrametría con dron.',     tag: 'Topografía',  iconBg: 'bg-rose-100 text-rose-600',     hover: 'hover:border-rose-300'   },
+  { icon: LuHardHat,   title: 'Diseño Estructural',    desc: 'Estructuras sismorresistentes optimizadas.',   tag: 'Ingeniería',  iconBg: 'bg-orange-100 text-orange-600', hover: 'hover:border-orange-300' },
+  { icon: LuCuboid,    title: 'Metodología BIM',         desc: 'Coordinación digital antes de construir.',     tag: 'Tecnología',  iconBg: 'bg-blue-100 text-blue-600',     hover: 'hover:border-blue-300'   },
+  { icon: LuClipboardList, title: 'Expedientes Técnicos', desc: 'Licencias de construcción y habilitaciones.',  tag: 'Trámites',    iconBg: 'bg-green-100 text-green-600',   hover: 'hover:border-green-300'  },
+  { icon: LuSearch,    title: 'Estudio de Suelos',       desc: 'Geotecnia y topografía de precisión.',         tag: 'Geotecnia',   iconBg: 'bg-amber-100 text-amber-600',   hover: 'hover:border-amber-300'  },
+  { icon: LuBuilding2, title: 'Construcción y Control',  desc: 'Supervisión técnica con control de calidad.',  tag: 'Supervisión', iconBg: 'bg-purple-100 text-purple-600', hover: 'hover:border-purple-300' },
+  { icon: LuRuler,     title: 'Topografía',              desc: 'Levantamientos y fotogrametría con dron.',     tag: 'Topografía',  iconBg: 'bg-rose-100 text-rose-600',     hover: 'hover:border-rose-300'   },
 ]
 
 export const blueprintGrid = {

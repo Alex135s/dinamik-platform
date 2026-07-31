@@ -6,11 +6,16 @@ import { useToast } from '../context/ToastContext'
 import { exportDocumentsPDF, exportDocumentsExcel } from '../utils/exportUtils'
 import PDFPreview from '../components/PDFPreview'
 import { usePermissions } from '../hooks/usePermissions'
+import {
+  LuFileText, LuFileSpreadsheet, LuSearch, LuFolder, LuPencilRuler, LuCuboid, LuCamera,
+  LuImages, LuClipboardList, LuPaperclip, LuPlus, LuUpload, LuCheck, LuX, LuEye, LuDownload,
+  LuTrash2, LuArrowLeft,
+} from 'react-icons/lu'
 
 const DOC_TYPES = ['plano_pdf', 'plano_cad', 'imagen_3d', 'foto', 'informe', 'otro']
 
 const typeIcons = {
-  plano_pdf: '📄', plano_cad: '📐', imagen_3d: '🏗️', foto: '📷', informe: '📋', otro: '📎',
+  plano_pdf: LuFileText, plano_cad: LuPencilRuler, imagen_3d: LuCuboid, foto: LuCamera, informe: LuClipboardList, otro: LuPaperclip,
 }
 
 const typeLabels = {
@@ -194,12 +199,12 @@ function Documents() {
           {perms.documents.canExport && (
             <div className="flex gap-2">
               <button onClick={() => exportDocumentsPDF(docs, projects)} disabled={docs.length === 0}
-                className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                📄 PDF
+                className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                <LuFileText size={15} /> PDF
               </button>
               <button onClick={() => exportDocumentsExcel(docs, projects)} disabled={docs.length === 0}
-                className="bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                📊 Excel
+                className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                <LuFileSpreadsheet size={15} /> Excel
               </button>
             </div>
           )}
@@ -207,7 +212,7 @@ function Documents() {
 
         {/* Buscador */}
         <div className="relative mb-6">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <LuSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             placeholder="Buscar proyecto..."
             value={searchProject}
@@ -219,7 +224,7 @@ function Documents() {
         {/* Grid de proyectos */}
         {filteredProjects.length === 0 ? (
           <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
-            <p className="text-4xl mb-3">📁</p>
+            <div className="flex justify-center mb-3 text-gray-500"><LuFolder size={40} /></div>
             <p className="text-gray-400 text-sm">No hay proyectos disponibles.</p>
           </div>
         ) : (
@@ -234,8 +239,8 @@ function Documents() {
 
                   {/* Icono y estado */}
                   <div className="flex items-start justify-between mb-3">
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">📁</span>
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-400">
+                      <LuFolder size={22} />
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${colors.bg} ${colors.text}`}>
                       {p.status}
@@ -255,9 +260,10 @@ function Documents() {
                       {['plano_pdf', 'plano_cad', 'imagen_3d', 'foto', 'informe'].map(tipo => {
                         const count = projDocs.filter(d => d.type === tipo).length
                         if (count === 0) return null
+                        const TypeIcon = typeIcons[tipo]
                         return (
-                          <span key={tipo} className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">
-                            {typeIcons[tipo]} {count}
+                          <span key={tipo} className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <TypeIcon size={11} /> {count}
                           </span>
                         )
                       })}
@@ -284,8 +290,8 @@ function Documents() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <button onClick={() => { setSelectedProject(null); setShowForm(false) }}
-          className="text-gray-400 hover:text-white text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors">
-          ← Proyectos
+          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors">
+          <LuArrowLeft size={14} /> Proyectos
         </button>
         <h1 className="text-2xl font-bold text-white">Documentos</h1>
       </div>
@@ -304,19 +310,19 @@ function Documents() {
             <span className="text-gray-400 text-xs">{projectDocs.length} documentos</span>
             {perms.documents.canUpload && (
               <>
-                <label className={`cursor-pointer bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium ${photoBusy ? 'opacity-50 pointer-events-none' : ''}`}>
-                  📷 Tomar foto
+                <label className={`cursor-pointer flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium ${photoBusy ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <LuCamera size={15} /> Tomar foto
                   <input type="file" accept="image/*" capture="environment" className="hidden"
                     onChange={e => { handlePhotos(e.target.files); e.target.value = '' }} />
                 </label>
-                <label className={`cursor-pointer bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium ${photoBusy ? 'opacity-50 pointer-events-none' : ''}`}>
-                  🖼️ Subir fotos
+                <label className={`cursor-pointer flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium ${photoBusy ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <LuImages size={15} /> Subir fotos
                   <input type="file" accept="image/*" multiple className="hidden"
                     onChange={e => { handlePhotos(e.target.files); e.target.value = '' }} />
                 </label>
                 <button onClick={() => setShowForm(!showForm)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                  ＋ Subir Documento
+                  className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                  <LuPlus size={15} /> Subir Documento
                 </button>
               </>
             )}
@@ -328,7 +334,7 @@ function Documents() {
       {photoBusy && (
         <div className="bg-gray-800 rounded-xl px-5 py-3 border border-orange-500/30 mb-6">
           <div className="flex justify-between text-xs text-gray-300 mb-1">
-            <span>📷 Subiendo fotos...</span>
+            <span className="flex items-center gap-1.5"><LuCamera size={13} /> Subiendo fotos...</span>
             <span>{photoStat.done}/{photoStat.total}</span>
           </div>
           <div className="bg-gray-700 rounded-full h-2">
@@ -341,7 +347,7 @@ function Documents() {
       {/* Formulario */}
       {showForm && perms.documents.canUpload && (
         <div className="bg-gray-800 rounded-xl p-6 mb-6 border border-orange-500/30">
-          <h2 className="text-white font-semibold mb-4">📤 Subir Documento</h2>
+          <h2 className="text-white font-semibold mb-4 flex items-center gap-2"><LuUpload size={16} /> Subir Documento</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input placeholder="Nombre del documento *" value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
@@ -350,7 +356,7 @@ function Documents() {
               onChange={e => setForm({ ...form, type: e.target.value })}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
               {DOC_TYPES.map(t => (
-                <option key={t} value={t}>{typeIcons[t]} {typeLabels[t]}</option>
+                <option key={t} value={t}>{typeLabels[t]}</option>
               ))}
             </select>
             <div>
@@ -361,8 +367,8 @@ function Documents() {
                 onChange={e => setFile(e.target.files[0])}
                 className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm w-full border border-gray-600" />
               {file && (
-                <p className="text-green-400 text-xs mt-1">
-                  ✅ {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                  <LuCheck size={13} /> {file.name} ({(file.size / 1024).toFixed(1)} KB)
                 </p>
               )}
             </div>
@@ -380,8 +386,8 @@ function Documents() {
           )}
           <div className="flex gap-3 mt-4">
             <button onClick={handleUpload} disabled={uploading}
-              className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium">
-              {uploading ? `Subiendo ${progress}%...` : '📤 Subir'}
+              className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium">
+              {uploading ? `Subiendo ${progress}%...` : <><LuUpload size={14} /> Subir</>}
             </button>
             <button onClick={() => { setShowForm(false); setFile(null) }}
               className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
@@ -394,12 +400,12 @@ function Documents() {
       {/* Documentos agrupados por tipo */}
       {projectDocs.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
-          <p className="text-4xl mb-3">📁</p>
+          <div className="flex justify-center mb-3 text-gray-500"><LuFolder size={40} /></div>
           <p className="text-gray-400 text-sm">No hay documentos en este proyecto.</p>
           {perms.documents.canUpload && (
             <button onClick={() => setShowForm(true)}
-              className="mt-4 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
-              ＋ Subir primer documento
+              className="mt-4 flex items-center gap-1.5 mx-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
+              <LuPlus size={15} /> Subir primer documento
             </button>
           )}
         </div>
@@ -408,10 +414,11 @@ function Documents() {
           {DOC_TYPES.map(tipo => {
             const grupo = projectDocs.filter(d => d.type === tipo)
             if (grupo.length === 0) return null
+            const TypeIcon = typeIcons[tipo]
             return (
               <div key={tipo}>
-                <p className="text-orange-400 text-xs font-semibold uppercase tracking-widest mb-3">
-                  {typeIcons[tipo]} {typeLabels[tipo]} ({grupo.length})
+                <p className="text-orange-400 text-xs font-semibold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <TypeIcon size={13} /> {typeLabels[tipo]} ({grupo.length})
                 </p>
                 <div className="grid gap-2">
                   {grupo.map(d => (
@@ -429,7 +436,7 @@ function Documents() {
                             onClick={() => isPDF(d.type) ? setPreviewPDF(d) : null}
                             className={`w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0
                               ${isPDF(d.type) ? 'cursor-pointer hover:border hover:border-orange-500' : ''}`}>
-                            <span className="text-2xl">{typeIcons[d.type]}</span>
+                            <TypeIcon size={22} className="text-gray-400" />
                           </div>
                         )}
                         <div className="min-w-0">
@@ -447,41 +454,41 @@ function Documents() {
                       <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                         {perms.documents.canToggle ? (
                           <button onClick={() => toggleEnabled(d.id, d.enabled)}
-                            className={`text-xs px-3 py-1 rounded-full font-medium transition-colors
+                            className={`text-xs px-3 py-1 rounded-full font-medium transition-colors flex items-center gap-1
                               ${d.enabled
                                 ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400'
                                 : 'bg-gray-700 text-gray-400 hover:bg-green-500/20 hover:text-green-400'
                               }`}>
-                            {d.enabled ? '✓ Habilitado' : '✗ Deshabilitado'}
+                            {d.enabled ? <><LuCheck size={12} /> Habilitado</> : <><LuX size={12} /> Deshabilitado</>}
                           </button>
                         ) : (
-                          <span className={`text-xs px-3 py-1 rounded-full font-medium
+                          <span className={`text-xs px-3 py-1 rounded-full font-medium flex items-center gap-1
                             ${d.enabled ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
-                            {d.enabled ? '✓ Habilitado' : '✗ Deshabilitado'}
+                            {d.enabled ? <><LuCheck size={12} /> Habilitado</> : <><LuX size={12} /> Deshabilitado</>}
                           </span>
                         )}
                         {isImage(d.type) && d.fileUrl && (
                           <button onClick={() => setPreviewDoc(d)}
-                            className="bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                            👁 Ver
+                            className="flex items-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                            <LuEye size={13} /> Ver
                           </button>
                         )}
                         {isPDF(d.type) && d.fileUrl && (
                           <button onClick={() => setPreviewPDF(d)}
-                            className="bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                            👁 Ver PDF
+                            className="flex items-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                            <LuEye size={13} /> Ver PDF
                           </button>
                         )}
                         {d.fileUrl && (
                           <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
-                            className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
-                            ⬇ Descargar
+                            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
+                            <LuDownload size={13} /> Descargar
                           </a>
                         )}
                         {perms.documents.canDelete && (
                           <button onClick={() => handleDelete(d.id, d.name)} disabled={deletingId === d.id}
-                            className="bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                            {deletingId === d.id ? '...' : '🗑'}
+                            className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                            {deletingId === d.id ? '...' : <LuTrash2 size={13} />}
                           </button>
                         )}
                       </div>
@@ -506,13 +513,13 @@ function Documents() {
             <div className="flex justify-between items-center mb-3">
               <p className="text-white font-semibold">{previewDoc.name}</p>
               <button onClick={() => setPreviewDoc(null)}
-                className="text-gray-400 hover:text-white text-xl px-2">✕</button>
+                className="text-gray-400 hover:text-white px-2"><LuX size={20} /></button>
             </div>
             <img src={previewDoc.fileUrl} alt={previewDoc.name}
               className="w-full rounded-lg object-contain max-h-[70vh]" />
             <a href={previewDoc.fileUrl} target="_blank" rel="noopener noreferrer"
-              className="mt-3 block text-center bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-medium">
-              ⬇ Descargar imagen completa
+              className="mt-3 flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-medium">
+              <LuDownload size={14} /> Descargar imagen completa
             </a>
           </div>
         </div>

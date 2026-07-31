@@ -16,8 +16,8 @@ function ServicesGrid({ onRequest }) {
           <div key={i} onClick={onRequest}
             className={`bg-white rounded-2xl p-5 border border-gray-100 cursor-pointer transition-all group shadow-sm hover:shadow-lg ${s.hover}`}>
             <div className="flex items-start justify-between mb-3">
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl ${s.iconBg}`}>
-                {s.icon}
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${s.iconBg}`}>
+                <s.icon size={20} />
               </div>
               <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{s.tag}</span>
             </div>

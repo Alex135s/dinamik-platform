@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { LuLayoutDashboard, LuHardHat, LuFolder, LuImage, LuTrendingUp, LuUsers, LuSettings, LuMenu } from 'react-icons/lu'
 import ChatbotAdmin from '../components/ChatbotAdmin'
 import { useSettings } from '../context/SettingsContext'
 
 const navItems = [
-  { path: '/',          label: 'dashboard',  icon: '📊' },
-  { path: '/projects',  label: 'projects',   icon: '🏗️' },
-  { path: '/documents', label: 'documents',  icon: '📁' },
-  { path: '/portfolio-admin', label: 'Galería Web', icon: '🖼️' },
-  { path: '/tracking',  label: 'tracking',   icon: '📈' },
-  { path: '/users',     label: 'users',      icon: '👤' },
-  { path: '/settings',  label: 'settings',   icon: '⚙️' },
+  { path: '/',          label: 'dashboard',  Icon: LuLayoutDashboard },
+  { path: '/projects',  label: 'projects',   Icon: LuHardHat },
+  { path: '/documents', label: 'documents',  Icon: LuFolder },
+  { path: '/portfolio-admin', label: 'Galería Web', Icon: LuImage },
+  { path: '/tracking',  label: 'tracking',   Icon: LuTrendingUp },
+  { path: '/users',     label: 'users',      Icon: LuUsers },
+  { path: '/settings',  label: 'settings',   Icon: LuSettings },
 ]
 
 function MainLayout({ children, user, onLogout }) {
@@ -55,7 +56,7 @@ function MainLayout({ children, user, onLogout }) {
                   ? 'bg-orange-500 text-white'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                 }`}>
-              <span>{item.icon}</span>
+              <item.Icon size={18} className="flex-shrink-0" />
               {t[item.label] || item.label}
             </Link>
           ))}
@@ -76,7 +77,9 @@ function MainLayout({ children, user, onLogout }) {
           </div>
           {user?.role === 'tecnico' && (
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-1.5 mb-2">
-              <p className="text-blue-400 text-xs text-center">👷 Modo Técnico</p>
+              <p className="text-blue-400 text-xs text-center flex items-center justify-center gap-1.5">
+                <LuHardHat size={13} /> Modo Técnico
+              </p>
             </div>
           )}
           <button onClick={onLogout}
@@ -91,8 +94,8 @@ function MainLayout({ children, user, onLogout }) {
         {/* Barra superior solo en móvil (con botón hamburguesa) */}
         <div className="md:hidden flex items-center gap-3 bg-gray-900 border-b border-gray-800 px-4 py-3 sticky top-0 z-20">
           <button onClick={() => setMenuOpen(true)}
-            className="text-gray-200 text-2xl leading-none" aria-label="Abrir menú">
-            ☰
+            className="text-gray-200 leading-none" aria-label="Abrir menú">
+            <LuMenu size={24} />
           </button>
           <img src={logoSrc} alt="DINAMIK" className="h-7 object-contain" />
         </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { FaWhatsapp } from 'react-icons/fa'
+import { LuMenu, LuX } from 'react-icons/lu'
 
 const NAV_LINKS = [
   { path: '/web',           label: 'Inicio'     },
@@ -42,8 +43,8 @@ function WebNavbar({ onWhatsapp }) {
         </div>
 
         {/* Mobile toggle */}
-        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-700 text-2xl">
-          {menuOpen ? '✕' : '☰'}
+        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-gray-700">
+          {menuOpen ? <LuX size={26} /> : <LuMenu size={26} />}
         </button>
       </div>
 

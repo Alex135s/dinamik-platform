@@ -3,6 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
 import ShareProjectCode from '../components/ShareProjectCode'
+import {
+  LuSearch, LuHardHat, LuCuboid, LuMap, LuClipboardCheck, LuBuilding2, LuCircleCheckBig,
+  LuCircleAlert, LuFlag, LuCalendar, LuClipboardList, LuFolder, LuFileText, LuPencilRuler,
+  LuPaperclip, LuDownload, LuArrowLeft, LuMapPin, LuX,
+} from 'react-icons/lu'
 
 const API = '' + import.meta.env.VITE_PROJECTS_API + ''        // ProjectsApi
 const DOCS_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''    // DocumentsApi
@@ -14,11 +19,11 @@ const statusColors = {
 }
 
 const serviceIcons = {
-  estructural:  '🏗️',
-  BIM:          '💻',
-  topografia:   '🗺️',
-  viabilidad:   '📋',
-  construccion: '🏢',
+  estructural:  LuHardHat,
+  BIM:          LuCuboid,
+  topografia:   LuMap,
+  viabilidad:   LuClipboardCheck,
+  construccion: LuBuilding2,
 }
 
 const taskStatusColors = {
@@ -29,7 +34,7 @@ const taskStatusColors = {
 
 // Iguales a los de tu página Documents.jsx
 const docTypeIcons = {
-  plano_pdf: '📄', plano_cad: '📐', imagen_3d: '🏗️', informe: '📋', otro: '📎',
+  plano_pdf: LuFileText, plano_cad: LuPencilRuler, imagen_3d: LuCuboid, informe: LuClipboardList, otro: LuPaperclip,
 }
 const docTypeLabels = {
   plano_pdf: 'Plano PDF', plano_cad: 'CAD / DWG',
@@ -105,30 +110,32 @@ function ProjectDetail() {
   if (notFound || !project) {
     return (
       <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
-        <p className="text-4xl mb-3">🔍</p>
+        <div className="flex justify-center mb-3 text-gray-500"><LuSearch size={40} /></div>
         <p className="text-gray-400 text-sm mb-4">No se encontró el proyecto.</p>
         <button onClick={() => navigate('/projects')}
-          className="text-orange-400 text-xs underline">
-          ← Volver a proyectos
+          className="text-orange-400 text-xs underline inline-flex items-center gap-1">
+          <LuArrowLeft size={13} /> Volver a proyectos
         </button>
       </div>
     )
   }
 
+  const ServiceIcon = serviceIcons[project.serviceType] || LuHardHat
+
   return (
     <div className="space-y-6">
       {/* Botón volver */}
       <button onClick={() => navigate('/projects')}
-        className="text-gray-400 hover:text-white text-sm">
-        ← Volver a proyectos
+        className="text-gray-400 hover:text-white text-sm inline-flex items-center gap-1">
+        <LuArrowLeft size={14} /> Volver a proyectos
       </button>
 
       {/* Encabezado */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-orange-500/20 rounded-xl flex items-center justify-center text-3xl flex-shrink-0">
-              {serviceIcons[project.serviceType] || '🏗️'}
+            <div className="w-14 h-14 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-400 flex-shrink-0">
+              <ServiceIcon size={26} />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">{project.name}</h1>
@@ -138,6 +145,7 @@ function ProjectDetail() {
               </div>
               <p className="text-gray-400 text-sm mt-0.5">
                 {project.client}{project.serviceType ? ` · ${project.serviceType}` : ''}
+                {project.clientDocNumber && ` · ${project.clientDocType} ${project.clientDocNumber}`}
               </p>
             </div>
           </div>
@@ -165,8 +173,8 @@ function ProjectDetail() {
         {/* Técnico asignado */}
         <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
           <p className="text-gray-400 text-xs mb-2">Técnico asignado</p>
-          <p className="text-lg font-semibold text-blue-400">
-            {tecnico ? `👷 ${tecnico}` : 'Sin asignar'}
+          <p className="text-lg font-semibold text-blue-400 flex items-center gap-1.5">
+            {tecnico ? <><LuHardHat size={16} /> {tecnico}</> : 'Sin asignar'}
           </p>
         </div>
 
@@ -176,10 +184,10 @@ function ProjectDetail() {
           {daysLeft === null ? (
             <p className="text-lg font-semibold text-gray-400">Sin fecha de fin</p>
           ) : project.status === 'completado' ? (
-            <p className="text-lg font-semibold text-blue-400">✅ Completado</p>
+            <p className="text-lg font-semibold text-blue-400 flex items-center gap-1.5"><LuCircleCheckBig size={17} /> Completado</p>
           ) : daysLeft < 0 ? (
-            <p className="text-lg font-semibold text-red-400">
-              🔴 Venció hace {Math.abs(daysLeft)} días
+            <p className="text-lg font-semibold text-red-400 flex items-center gap-1.5">
+              <LuCircleAlert size={17} /> Venció hace {Math.abs(daysLeft)} días
             </p>
           ) : (
             <p className={`text-lg font-semibold ${daysLeft <= 7 ? 'text-red-400' : daysLeft <= 30 ? 'text-yellow-400' : 'text-white'}`}>
@@ -187,7 +195,7 @@ function ProjectDetail() {
             </p>
           )}
           {project.endDate && (
-            <p className="text-gray-500 text-xs mt-1">🏁 {project.endDate}</p>
+            <p className="text-gray-500 text-xs mt-1 flex items-center gap-1"><LuFlag size={12} /> {project.endDate}</p>
           )}
         </div>
       </div>
@@ -197,8 +205,8 @@ function ProjectDetail() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold">Tareas ({tasks.length})</h2>
           <button onClick={() => navigate(`/projects/${projectId}/tasks`)}
-            className="bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-            📋 Gestionar tareas
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+            <LuClipboardList size={14} /> Gestionar tareas
           </button>
         </div>
         {tasks.length === 0 ? (
@@ -213,7 +221,7 @@ function ProjectDetail() {
                     <p className="text-gray-500 text-xs mt-0.5 truncate">{task.description}</p>
                   )}
                   {task.dueDate && (
-                    <p className="text-gray-500 text-xs mt-0.5">📅 Vence: {task.dueDate}</p>
+                    <p className="text-gray-500 text-xs mt-0.5 flex items-center gap-1"><LuCalendar size={11} /> Vence: {task.dueDate}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
@@ -237,37 +245,40 @@ function ProjectDetail() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold">Documentos ({documents.length})</h2>
           <button onClick={() => navigate('/documents')}
-            className="bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-            📁 Gestionar documentos
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+            <LuFolder size={14} /> Gestionar documentos
           </button>
         </div>
         {documents.length === 0 ? (
           <p className="text-gray-500 text-sm">No hay documentos para este proyecto.</p>
         ) : (
           <div className="grid gap-2">
-            {documents.map(doc => (
+            {documents.map(doc => {
+              const DocIcon = docTypeIcons[doc.type] || LuPaperclip
+              return (
               <div key={doc.id}
                 className={`flex items-center justify-between bg-gray-700/40 rounded-lg px-4 py-3 transition-colors
                   ${doc.enabled ? '' : 'opacity-60'}`}>
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-2xl flex-shrink-0">{docTypeIcons[doc.type] || '📎'}</span>
+                  <span className="flex-shrink-0 text-gray-400"><DocIcon size={22} /></span>
                   <div className="min-w-0">
                     <p className="text-white text-sm font-medium truncate">{doc.name}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">
+                    <p className="text-gray-500 text-xs mt-0.5 flex items-center gap-1">
                       {docTypeLabels[doc.type] || 'Documento'}
                       {doc.uploadedAt && ` · ${new Date(doc.uploadedAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}`}
-                      {!doc.enabled && ' · ✗ Deshabilitado'}
+                      {!doc.enabled && <span className="inline-flex items-center gap-0.5"> · <LuX size={11} /> Deshabilitado</span>}
                     </p>
                   </div>
                 </div>
                 {doc.fileUrl && (
                   <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
-                    className="bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 ml-3">
-                    ⬇ Abrir
+                    className="flex items-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 ml-3">
+                    <LuDownload size={13} /> Abrir
                   </a>
                 )}
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -277,7 +288,7 @@ function ProjectDetail() {
         <h2 className="text-white font-semibold mb-3">Ubicación</h2>
         {project.location && (
           <p className="text-gray-400 text-sm mb-3 flex items-center gap-1">
-            📍 {project.location}
+            <LuMapPin size={14} /> {project.location}
           </p>
         )}
         {project.latitude && project.longitude ? (
