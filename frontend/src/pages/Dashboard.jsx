@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   LineChart, Line
 } from 'recharts'
-import { LuBell, LuCircleAlert, LuTriangleAlert, LuClock, LuHourglass, LuRefreshCw, LuCircleCheckBig, LuAlarmClock } from 'react-icons/lu'
+import {
+  LuBell, LuCircleAlert, LuTriangleAlert, LuClock, LuHourglass, LuRefreshCw,
+  LuCircleCheckBig, LuAlarmClock, LuFolderKanban, LuActivity, LuLoader,
+  LuChartPie, LuArrowRight, LuTable2, LuListChecks, LuCalendarClock,
+  LuBuilding2, LuFlag,
+} from 'react-icons/lu'
 
 const statusColors = {
   activo:     { bg: 'bg-green-500/20',  text: 'text-green-400'  },
@@ -13,14 +19,47 @@ const statusColors = {
   completado: { bg: 'bg-blue-500/20',   text: 'text-blue-400'   },
 }
 
+const taskStatusColors = {
+  pendiente:   { bg: 'bg-gray-500/20',   text: 'text-gray-400'   },
+  en_progreso: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+  completado:  { bg: 'bg-green-500/20',  text: 'text-green-400'  },
+}
+
+const taskStatusLabels = { pendiente: 'Pendiente', en_progreso: 'En progreso', completado: 'Completado' }
+
+const priorityColors = {
+  baja:  { bg: 'bg-blue-500/20',   text: 'text-blue-400'   },
+  media: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+  alta:  { bg: 'bg-red-500/20',    text: 'text-red-400'    },
+}
+
 const isNew = (uploadedAt) => {
   if (!uploadedAt) return false
   return (new Date() - new Date(uploadedAt)) / (1000 * 60 * 60 * 24) <= 7
 }
 
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+  : '—'
+
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
+const tooltipStyle = { backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }
+
+function SectionHeader({ icon: Icon, title, badge, action }) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-white font-semibold text-lg flex items-center gap-2">
+        <Icon size={18} className="text-orange-500" /> {title}
+        {badge}
+      </h2>
+      {action}
+    </div>
+  )
+}
+
 function Dashboard() {
+  const navigate = useNavigate()
   const [projects, setProjects] = useState([])
   const [docs, setDocs]         = useState([])
   const [tasks, setTasks]       = useState([])
@@ -36,7 +75,7 @@ function Dashboard() {
     Promise.all(
       projects.map(p => axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${p.id}`))
     ).then(results => {
-      setTasks(results.flatMap(r => r.data))
+      setTasks(results.flatMap((r, i) => r.data.map(t => ({ ...t, projectId: t.projectId || projects[i].id }))))
     }).catch(() => {})
   }, [projects])
 
@@ -47,7 +86,8 @@ function Dashboard() {
   const completados = projects.filter(p => p.status === 'completado').length
   const docsNuevos  = docs.filter(d => isNew(d.uploadedAt))
 
-  const getProjectName = (id) => projects.find(p => p.id === id)?.name || 'Sin proyecto'
+  const getProject = (id) => projects.find(p => p.id === id)
+  const getProjectName = (id) => getProject(id)?.name || 'Sin proyecto'
 
   // ── Proyectos por finalizar (próximos 30 días) ──────────
   const hoy = new Date()
@@ -93,12 +133,27 @@ function Dashboard() {
   })
   const dataLinea = MESES.map((mes, i) => ({ mes, proyectos: conteoPorMes[i] }))
 
-  const cards = [
-    { label: 'Total Proyectos', value: total,       color: 'text-white',      bg: 'bg-gray-700' },
-    { label: 'Activos',         value: activos,     color: 'text-green-400',  bg: 'bg-gray-800' },
-    { label: 'En Proceso',      value: enProceso,   color: 'text-yellow-400', bg: 'bg-gray-800' },
-    { label: 'Completados',     value: completados, color: 'text-blue-400',   bg: 'bg-gray-800' },
+  const projectCards = [
+    { label: 'Total Proyectos', value: total,       color: 'text-white',      iconBg: 'bg-gray-700',       iconColor: 'text-gray-300',   Icon: LuFolderKanban },
+    { label: 'Activos',         value: activos,     color: 'text-green-400',  iconBg: 'bg-green-500/15',   iconColor: 'text-green-400',  Icon: LuActivity },
+    { label: 'En Proceso',      value: enProceso,   color: 'text-yellow-400', iconBg: 'bg-yellow-500/15',  iconColor: 'text-yellow-400', Icon: LuLoader },
+    { label: 'Completados',     value: completados, color: 'text-blue-400',   iconBg: 'bg-blue-500/15',    iconColor: 'text-blue-400',   Icon: LuCircleCheckBig },
   ]
+
+  // ── Tablas ───────────────────────────────────────────────
+  const proyectosTabla = [...projects]
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 8)
+
+  const tareasTabla = [...tasks]
+    .sort((a, b) => {
+      if (a.status === 'completado' && b.status !== 'completado') return 1
+      if (b.status === 'completado' && a.status !== 'completado') return -1
+      if (!a.dueDate) return 1
+      if (!b.dueDate) return -1
+      return new Date(a.dueDate) - new Date(b.dueDate)
+    })
+    .slice(0, 8)
 
   return (
     <div>
@@ -125,15 +180,13 @@ function Dashboard() {
 
       {/* Alertas de vencimiento */}
       {(vencidos.length > 0 || porFinalizar.length > 0) && (
-        <div className="grid gap-2 mb-6">
+        <div className="grid gap-2 mb-8">
           {vencidos.map(p => (
             <div key={p.id} className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-3 flex items-center gap-3">
               <LuCircleAlert size={18} className="text-red-400 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-red-400 text-sm font-semibold">{p.name}</p>
-                <p className="text-red-400/70 text-xs">
-                  Venció el {new Date(p.endDate).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' })}
-                </p>
+                <p className="text-red-400/70 text-xs">Venció el {fmtDate(p.endDate)}</p>
               </div>
               <span className="text-red-400 text-xs bg-red-500/20 px-2 py-1 rounded-full">VENCIDO</span>
             </div>
@@ -157,8 +210,7 @@ function Dashboard() {
                     {p.progress || 0}% completado
                   </p>
                   <div className="w-24 bg-gray-700 rounded-full h-1.5 mt-1">
-                    <div className="bg-orange-500 h-1.5 rounded-full"
-                      style={{ width: `${p.progress || 0}%` }} />
+                    <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${p.progress || 0}%` }} />
                   </div>
                 </div>
               </div>
@@ -167,33 +219,55 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Cards estadísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {cards.map(c => (
-          <div key={c.label} className={`${c.bg} rounded-xl p-6 border border-gray-700`}>
-            <p className="text-gray-400 text-sm">{c.label}</p>
-            <p className={`text-4xl font-bold mt-2 ${c.color}`}>{c.value}</p>
+      {/* KPIs — proyectos */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        {projectCards.map(c => (
+          <div key={c.label} className="bg-gray-800 rounded-xl p-5 border border-gray-700 flex items-center gap-4">
+            <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${c.iconBg}`}>
+              <c.Icon size={20} className={c.iconColor} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-gray-400 text-xs truncate">{c.label}</p>
+              <p className={`text-2xl font-bold mt-0.5 ${c.color}`}>{c.value}</p>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Resumen de tareas */}
+      {/* KPIs — tareas */}
       {tasks.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-            <p className="text-gray-400 text-sm mb-1 flex items-center gap-1.5"><LuHourglass size={14} /> Tareas Pendientes</p>
-            <p className="text-3xl font-bold text-yellow-400">{tareasPendientes}</p>
-            <p className="text-gray-500 text-xs mt-1">de {tasks.length} totales</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-500/15">
+              <LuHourglass size={20} className="text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs">Tareas Pendientes</p>
+              <p className="text-2xl font-bold mt-0.5 text-yellow-400">{tareasPendientes}</p>
+              <p className="text-gray-500 text-xs">de {tasks.length} totales</p>
+            </div>
+          </div>
+          <div className="bg-gray-800 rounded-xl p-5 border border-gray-700 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-500/15">
+              <LuRefreshCw size={20} className="text-blue-400" />
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs">En Progreso</p>
+              <p className="text-2xl font-bold mt-0.5 text-blue-400">{tareasEnProgreso}</p>
+              <p className="text-gray-500 text-xs">de {tasks.length} totales</p>
+            </div>
           </div>
           <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-            <p className="text-gray-400 text-sm mb-1 flex items-center gap-1.5"><LuRefreshCw size={14} /> En Progreso</p>
-            <p className="text-3xl font-bold text-blue-400">{tareasEnProgreso}</p>
-            <p className="text-gray-500 text-xs mt-1">de {tasks.length} totales</p>
-          </div>
-          <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-            <p className="text-gray-400 text-sm mb-1 flex items-center gap-1.5"><LuCircleCheckBig size={14} /> Completadas</p>
-            <p className="text-3xl font-bold text-green-400">{tareasCompletadas}</p>
-            <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-500/15">
+                <LuCircleCheckBig size={20} className="text-green-400" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-xs">Completadas</p>
+                <p className="text-2xl font-bold mt-0.5 text-green-400">{tareasCompletadas}</p>
+              </div>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-1.5">
               <div className="bg-green-500 h-1.5 rounded-full transition-all"
                 style={{ width: `${tasks.length > 0 ? Math.round((tareasCompletadas / tasks.length) * 100) : 0}%` }} />
             </div>
@@ -206,9 +280,9 @@ function Dashboard() {
 
       {/* Proyectos por finalizar */}
       {porFinalizar.length > 0 && (
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-8">
           <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <LuAlarmClock size={16} /> Proyectos por Finalizar
+            <LuAlarmClock size={16} className="text-orange-500" /> Proyectos por Finalizar
             <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full">
               próximos 30 días
             </span>
@@ -241,7 +315,8 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Gráficos — fila 1 */}
+      {/* Análisis */}
+      <SectionHeader icon={LuChartPie} title="Análisis" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Dona */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
@@ -250,15 +325,21 @@ function Dashboard() {
           {dataDona.length === 0 ? (
             <p className="text-gray-500 text-sm text-center py-10">Sin datos aún</p>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={dataDona} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value">
-                  {dataDona.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} itemStyle={{ color: '#d1d5db' }} />
-                <Legend formatter={value => <span style={{ color: '#9ca3af', fontSize: '12px' }}>{value}</span>} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="relative">
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={dataDona} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value" stroke="#1f2937" strokeWidth={2}>
+                    {dataDona.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#d1d5db' }} />
+                  <Legend formatter={value => <span style={{ color: '#9ca3af', fontSize: '12px' }}>{value}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ paddingBottom: 36 }}>
+                <p className="text-white text-2xl font-bold">{total}</p>
+                <p className="text-gray-500 text-xs">proyectos</p>
+              </div>
+            </div>
           )}
         </div>
 
@@ -270,12 +351,12 @@ function Dashboard() {
             <p className="text-gray-500 text-sm text-center py-10">Sin documentos aún</p>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={dataBarras} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <BarChart data={dataBarras} barSize={24}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} itemStyle={{ color: '#d1d5db' }} />
-                <Bar dataKey="total" fill="#f97316" radius={[6, 6, 0, 0]} />
+                <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#d1d5db' }} cursor={{ fill: '#37415155' }} />
+                <Bar dataKey="total" fill="#f97316" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -283,25 +364,156 @@ function Dashboard() {
       </div>
 
       {/* Línea */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
+      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-8">
         <h3 className="text-white font-semibold mb-1">Proyectos Registrados por Mes</h3>
         <p className="text-gray-500 text-xs mb-4">Año {new Date().getFullYear()}</p>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={dataLinea}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
             <XAxis dataKey="mes" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} itemStyle={{ color: '#d1d5db' }} />
-            <Line type="monotone" dataKey="proyectos" stroke="#f97316" strokeWidth={2.5} dot={{ fill: '#f97316', r: 4 }} activeDot={{ r: 6 }} />
+            <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#d1d5db' }} cursor={{ stroke: '#374151' }} />
+            <Line type="monotone" dataKey="proyectos" stroke="#f97316" strokeWidth={2} dot={{ fill: '#f97316', r: 4, strokeWidth: 2, stroke: '#1f2937' }} activeDot={{ r: 6 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
+      {/* Tabla de Proyectos */}
+      <SectionHeader
+        icon={LuTable2}
+        title="Proyectos"
+        badge={<span className="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full">{total}</span>}
+        action={
+          <Link to="/projects" className="flex items-center gap-1 text-orange-400 hover:text-orange-300 text-sm font-medium">
+            Ver todos <LuArrowRight size={14} />
+          </Link>
+        }
+      />
+      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-8">
+        {proyectosTabla.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-10">No hay proyectos registrados aún.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-700 text-left">
+                  <th className="px-5 py-3 font-medium text-gray-400">Proyecto</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Cliente</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Servicio</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Estado</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Progreso</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Vence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proyectosTabla.map(p => {
+                  const colors = statusColors[p.status] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
+                  const vencido = p.endDate && p.status !== 'completado' && new Date(p.endDate) < hoy
+                  return (
+                    <tr key={p.id}
+                      onClick={() => navigate(`/projects/${p.id}/detail`)}
+                      className="border-b border-gray-700/60 last:border-0 hover:bg-gray-700/40 cursor-pointer transition-colors">
+                      <td className="px-5 py-3">
+                        <p className="text-white font-medium">{p.name}</p>
+                        {p.projectCode && <p className="text-orange-500 text-xs font-mono">{p.projectCode}</p>}
+                      </td>
+                      <td className="px-5 py-3 text-gray-300">{p.client || '—'}</td>
+                      <td className="px-5 py-3 text-gray-300">{p.serviceType || '—'}</td>
+                      <td className="px-5 py-3">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text}`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2 min-w-[100px]">
+                          <div className="flex-1 bg-gray-700 rounded-full h-1.5">
+                            <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${p.progress || 0}%` }} />
+                          </div>
+                          <span className="text-gray-400 text-xs w-8 text-right">{p.progress || 0}%</span>
+                        </div>
+                      </td>
+                      <td className={`px-5 py-3 flex items-center gap-1.5 ${vencido ? 'text-red-400' : 'text-gray-400'}`}>
+                        <LuCalendarClock size={13} /> {fmtDate(p.endDate)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Tabla de Tareas */}
+      <SectionHeader
+        icon={LuListChecks}
+        title="Tareas"
+        badge={<span className="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full">{tasks.length}</span>}
+        action={
+          <Link to="/tracking" className="flex items-center gap-1 text-orange-400 hover:text-orange-300 text-sm font-medium">
+            Ver seguimiento <LuArrowRight size={14} />
+          </Link>
+        }
+      />
+      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-8">
+        {tareasTabla.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-10">No hay tareas registradas aún.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-700 text-left">
+                  <th className="px-5 py-3 font-medium text-gray-400">Tarea</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Proyecto</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Prioridad</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Estado</th>
+                  <th className="px-5 py-3 font-medium text-gray-400">Vence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tareasTabla.map(t => {
+                  const sc = taskStatusColors[t.status]     || taskStatusColors.pendiente
+                  const pc = priorityColors[t.priority]     || priorityColors.media
+                  const vencida = t.dueDate && t.status !== 'completado' && new Date(t.dueDate) < hoy
+                  return (
+                    <tr key={t.id}
+                      onClick={() => t.projectId && navigate(`/projects/${t.projectId}/tasks`)}
+                      className="border-b border-gray-700/60 last:border-0 hover:bg-gray-700/40 cursor-pointer transition-colors">
+                      <td className="px-5 py-3">
+                        <p className={`font-medium ${t.status === 'completado' ? 'text-gray-500 line-through' : 'text-white'}`}>
+                          {t.title}
+                        </p>
+                      </td>
+                      <td className="px-5 py-3 text-gray-300 flex items-center gap-1.5">
+                        <LuBuilding2 size={13} className="text-gray-500" /> {getProjectName(t.projectId)}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 w-fit ${pc.bg} ${pc.text}`}>
+                          <LuFlag size={11} /> {t.priority || 'media'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${sc.bg} ${sc.text}`}>
+                          {taskStatusLabels[t.status] || t.status}
+                        </span>
+                      </td>
+                      <td className={`px-5 py-3 ${vencida ? 'text-red-400' : 'text-gray-400'}`}>
+                        {fmtDate(t.dueDate)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Documentos recientes */}
       {docsNuevos.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-8">
           <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <LuBell size={16} /> Documentos recientes
+            <LuBell size={16} className="text-orange-500" /> Documentos recientes
             <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
               {docsNuevos.length} nuevos
             </span>
@@ -324,33 +536,6 @@ function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* Proyectos recientes */}
-      <h2 className="text-white font-semibold mb-4">Proyectos recientes</h2>
-      <div className="grid gap-3">
-        {projects.slice(0, 5).map(p => {
-          const colors = statusColors[p.status] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
-          return (
-            <div key={p.id} className="bg-gray-800 rounded-xl px-5 py-4 border border-gray-700 flex justify-between items-center">
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium">{p.name}</p>
-                <p className="text-gray-500 text-xs mt-1">{p.client} · {p.serviceType}</p>
-                {p.progress > 0 && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="w-32 bg-gray-700 rounded-full h-1.5">
-                      <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${p.progress}%` }} />
-                    </div>
-                    <span className="text-gray-400 text-xs">{p.progress}%</span>
-                  </div>
-                )}
-              </div>
-              <span className={`text-xs font-semibold px-3 py-1 rounded-full ml-3 ${colors.bg} ${colors.text}`}>
-                {p.status}
-              </span>
-            </div>
-          )
-        })}
-      </div>
     </div>
   )
 }
