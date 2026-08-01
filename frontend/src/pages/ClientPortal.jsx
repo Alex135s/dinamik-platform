@@ -9,7 +9,8 @@ import Timeline from '../components/portal/Timeline'
 import Deliverables from '../components/portal/Deliverables'
 import ServicesGrid from '../components/portal/ServicesGrid'
 import Sidebar from '../components/portal/Sidebar'
-import { LuX } from 'react-icons/lu'
+import { getInitials } from '../components/portal/portalData'
+import { LuX, LuLogOut } from 'react-icons/lu'
 
 function ClientPortal() {
   const [code, setCode]             = useState('')
@@ -109,10 +110,21 @@ function ClientPortal() {
             <p className="text-gray-400 text-xs">Portal del Cliente</p>
           </div>
         </div>
-        <button onClick={handleLogout}
-          className="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
-          Cerrar sesión
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-full py-1 pl-1 pr-3">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {getInitials(project.client)}
+            </div>
+            <div className="hidden sm:block leading-tight">
+              <p className="text-gray-900 text-xs font-semibold truncate max-w-[160px]">{project.client}</p>
+              <p className="text-gray-400 text-[10px] font-mono">{project.projectCode}</p>
+            </div>
+          </div>
+          <button onClick={handleLogout} title="Cerrar sesión"
+            className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+            <LuLogOut size={17} />
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 sm:px-10 py-10">

@@ -115,10 +115,13 @@ app.MapGet("/api/projects", async () =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        @"SELECT id, name, client, service_type, status, start_date,
-                 created_at, project_code, whatsapp, end_date, progress, assigned_to,
-                 location, latitude, longitude, client_doc_type, client_doc_number
-          FROM projects ORDER BY created_at DESC", conn);
+        @"SELECT p.id, p.name, p.client, p.service_type, p.status, p.start_date,
+                 p.created_at, p.project_code, p.whatsapp, p.end_date, p.progress, p.assigned_to,
+                 p.location, p.latitude, p.longitude, p.client_doc_type, p.client_doc_number,
+                 u.name
+          FROM projects p
+          LEFT JOIN users u ON u.id = p.assigned_to
+          ORDER BY p.created_at DESC", conn);
     await using var reader = await cmd.ExecuteReaderAsync();
     while (await reader.ReadAsync())
     {
@@ -140,7 +143,8 @@ app.MapGet("/api/projects", async () =>
             latitude       = reader.IsDBNull(13) ? (decimal?)null : reader.GetDecimal(13),
             longitude      = reader.IsDBNull(14) ? (decimal?)null : reader.GetDecimal(14),
             clientDocType   = reader.IsDBNull(15) ? null : reader.GetString(15),
-            clientDocNumber = reader.IsDBNull(16) ? null : reader.GetString(16)
+            clientDocNumber = reader.IsDBNull(16) ? null : reader.GetString(16),
+            assignedToName  = reader.IsDBNull(17) ? null : reader.GetString(17)
         });
     }
     return Results.Ok(projects);

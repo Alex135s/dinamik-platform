@@ -2,6 +2,7 @@
 import {
   LuFileText, LuPencilRuler, LuCuboid, LuClipboardList, LuPaperclip,
   LuHardHat, LuSearch, LuBuilding2, LuRuler,
+  LuActivity, LuLoader, LuCircleCheckBig,
 } from 'react-icons/lu'
 
 export const typeIcons = {
@@ -50,3 +51,15 @@ export const isNew = (uploadedAt) => {
 }
 
 export const isPDF = (type) => type === 'plano_pdf' || type === 'informe'
+
+export const statusInfo = {
+  activo:     { label: 'Activo',     Icon: LuActivity },
+  en_proceso: { label: 'En proceso', Icon: LuLoader },
+  completado: { label: 'Completado', Icon: LuCircleCheckBig },
+}
+
+export const getInitials = (name) => {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase()
+}
