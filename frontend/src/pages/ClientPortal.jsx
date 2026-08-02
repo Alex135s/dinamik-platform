@@ -30,6 +30,11 @@ function ClientPortal() {
   // Selector de proyecto cuando un cliente con Google tiene más de uno
   const [clientProjects, setClientProjects] = useState(null)
   const [clientName, setClientName]         = useState('')
+  // Solicitud de acceso (cliente nuevo, sin proyecto todavía)
+  const [showSignup, setShowSignup]     = useState(false)
+  const [signupForm, setSignupForm]     = useState({ name: '', email: '' })
+  const [signupSending, setSignupSending] = useState(false)
+  const [signupDone, setSignupDone]     = useState(false)
 
   const loadProjectData = async (found) => {
     setProject(found)
@@ -101,6 +106,26 @@ function ClientPortal() {
     }
   }
 
+  const handleSignupRequest = async () => {
+    if (!signupForm.name.trim() || !signupForm.email.trim()) {
+      setError('Nombre y correo son obligatorios.')
+      return
+    }
+    setSignupSending(true)
+    setError('')
+    try {
+      await axios.post('' + import.meta.env.VITE_PROJECTS_API + '/api/clients', {
+        name: signupForm.name.trim(),
+        email: signupForm.email.trim(),
+      })
+      setSignupDone(true)
+    } catch (err) {
+      setError(err.response?.data?.error || 'No se pudo enviar la solicitud. Intenta de nuevo.')
+    } finally {
+      setSignupSending(false)
+    }
+  }
+
   const handleWhatsapp = () => {
     const number = project?.whatsapp?.replace(/\D/g, '') || '51962744341'
     window.open(
@@ -112,6 +137,7 @@ function ClientPortal() {
   const handleLogout = () => {
     setProject(null); setCode(''); setDocs([]); setAllDocs([]); setTasks([])
     setClientProjects(null); setClientName('')
+    setShowSignup(false); setSignupDone(false); setSignupForm({ name: '', email: '' })
   }
 
   // ── Selector de proyecto (cliente con Google y varios proyectos) ────
@@ -142,6 +168,66 @@ function ClientPortal() {
           ))}
         </div>
         {error && <p className="text-red-500 text-xs mt-4">{error}</p>}
+      </AuthSplitPanel>
+    )
+  }
+
+  // ── Solicitud de acceso (cliente nuevo, sin proyecto todavía) ────────
+  if (!project && showSignup) {
+    return (
+      <AuthSplitPanel tagline="Portal del Cliente" subtitle="Seguimiento de tu proyecto en un solo lugar">
+        <button onClick={() => { setShowSignup(false); setSignupDone(false); setError('') }}
+          className="flex items-center gap-1.5 text-gray-500 hover:text-gray-800 text-sm mb-8 transition-colors w-fit">
+          <LuArrowLeft size={15} /> Volver
+        </button>
+
+        {signupDone ? (
+          <>
+            <h1 className="text-2xl font-black text-gray-900">Solicitud enviada</h1>
+            <p className="text-gray-500 text-sm mt-3">
+              Un asesor de DINAMIK se pondrá en contacto contigo para vincular tu proyecto a este correo.
+              Mientras tanto, puedes escribirnos directo:
+            </p>
+            <button onClick={() => window.open('https://wa.me/51962744341?text=Hola, acabo de solicitar acceso al Portal del Cliente.', '_blank')}
+              className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl text-sm font-semibold mt-5">
+              Escribir por WhatsApp
+            </button>
+          </>
+        ) : (
+          <>
+            <h1 className="text-3xl font-black text-gray-900">Solicitar acceso</h1>
+            <p className="text-gray-500 text-sm mt-2 mb-8">
+              ¿Aún no tienes un proyecto con nosotros? Déjanos tus datos y te contactamos.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="text-gray-700 text-sm font-medium block mb-1.5">Nombre completo</label>
+                <input
+                  placeholder="Tu nombre o el de tu empresa"
+                  value={signupForm.name}
+                  onChange={e => setSignupForm({ ...signupForm, name: e.target.value })}
+                  className="w-full bg-white text-gray-900 rounded-xl px-4 py-3 text-sm border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="text-gray-700 text-sm font-medium block mb-1.5">Correo</label>
+                <input
+                  type="email"
+                  placeholder="tucorreo@gmail.com"
+                  value={signupForm.email}
+                  onChange={e => setSignupForm({ ...signupForm, email: e.target.value })}
+                  onKeyDown={e => e.key === 'Enter' && handleSignupRequest()}
+                  className="w-full bg-white text-gray-900 rounded-xl px-4 py-3 text-sm border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
+                />
+              </div>
+              {error && <p className="text-red-500 text-xs">{error}</p>}
+              <button onClick={handleSignupRequest} disabled={signupSending}
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/25 transition">
+                {signupSending ? 'Enviando...' : 'Solicitar acceso'}
+              </button>
+            </div>
+          </>
+        )}
       </AuthSplitPanel>
     )
   }
@@ -183,7 +269,10 @@ function ClientPortal() {
           </button>
         </div>
         <p className="text-gray-400 text-xs text-center mt-6">
-          ¿No tienes tu código? Contáctanos al +51 962 744 341
+          ¿No tienes cuenta?{' '}
+          <button onClick={() => { setShowSignup(true); setError('') }} className="text-orange-500 hover:text-orange-600 font-medium">
+            Solicitar acceso
+          </button>
         </p>
       </AuthSplitPanel>
     )

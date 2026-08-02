@@ -617,6 +617,20 @@ app.MapPost("/api/portal/auth/google", async (GoogleAuthRequest req) =>
     return Results.Ok(new { clientId, clientName, projects });
 });
 
+// POST solicitud de acceso desde el portal (cliente sin proyecto todavía) —
+// crea/actualiza el cliente como lead; queda "Sin proyectos" en el panel
+// hasta que un admin le registre uno con este mismo correo.
+app.MapPost("/api/clients", async (ClientRequest req) =>
+{
+    if (string.IsNullOrWhiteSpace(req.Name) || string.IsNullOrWhiteSpace(req.Email))
+        return Results.BadRequest(new { error = "Nombre y correo son obligatorios." });
+
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    var id = await UpsertClienteAsync(conn, req.Name, req.DocType, req.DocNumber, req.Email);
+    return Results.Ok(new { id });
+});
+
 // GET todos los clientes (con cantidad de proyectos)
 app.MapGet("/api/clients", async () =>
 {
