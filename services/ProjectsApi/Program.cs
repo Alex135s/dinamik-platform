@@ -431,6 +431,7 @@ app.MapPost("/api/auth/google", async (GoogleAuthRequest req) =>
     {
         var jwks = await GetFirebaseJwksAsync();
         var handler = new JwtSecurityTokenHandler();
+        handler.MapInboundClaims = false; // conservar nombres originales del token (email, sub, email_verified) sin remapear a URIs WS-Federation
         principal = handler.ValidateToken(req.IdToken, new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
