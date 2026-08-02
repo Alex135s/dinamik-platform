@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '../firebase'
 import Chatbot from '../components/Chatbot'
 import PDFViewerProtected from '../components/PDFViewerProtected'
 import { isPDF } from '../components/portal/portalData'
@@ -10,7 +12,8 @@ import Deliverables from '../components/portal/Deliverables'
 import ServicesGrid from '../components/portal/ServicesGrid'
 import Sidebar from '../components/portal/Sidebar'
 import { getInitials } from '../components/portal/portalData'
-import { LuX, LuLogOut } from 'react-icons/lu'
+import { LuX, LuLogOut, LuArrowLeft, LuArrowRight, LuFolderKanban } from 'react-icons/lu'
+import { FcGoogle } from 'react-icons/fc'
 
 function ClientPortal() {
   const [code, setCode]             = useState('')
@@ -20,8 +23,23 @@ function ClientPortal() {
   const [tasks, setTasks]           = useState([])
   const [error, setError]           = useState('')
   const [loading, setLoading]       = useState(false)
+  const [loadingGoogle, setLoadingGoogle] = useState(false)
   const [pdfViewer, setPdfViewer]   = useState(null)
   const [previewImg, setPreviewImg] = useState(null)
+  // Selector de proyecto cuando un cliente con Google tiene más de uno
+  const [clientProjects, setClientProjects] = useState(null)
+  const [clientName, setClientName]         = useState('')
+
+  const loadProjectData = async (found) => {
+    setProject(found)
+    const [docsRes, tasksRes] = await Promise.all([
+      axios.get(`${import.meta.env.VITE_DOCUMENTS_API}/api/documents/project/${found.id}`),
+      axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${found.id}`).catch(() => ({ data: [] })),
+    ])
+    setDocs(docsRes.data.filter(d => d.enabled))
+    setAllDocs(docsRes.data)
+    setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : [])
+  }
 
   const handleLogin = async () => {
     if (!code.trim()) return
@@ -37,14 +55,44 @@ function ClientPortal() {
         setLoading(false)
         return
       }
-      setProject(found)
-      const [docsRes, tasksRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_DOCUMENTS_API}/api/documents/project/${found.id}`),
-        axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${found.id}`).catch(() => ({ data: [] })),
-      ])
-      setDocs(docsRes.data.filter(d => d.enabled))
-      setAllDocs(docsRes.data)
-      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : [])
+      await loadProjectData(found)
+    } catch {
+      setError('Error al conectar. Intente nuevamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setError('')
+    setLoadingGoogle(true)
+    try {
+      const result  = await signInWithPopup(auth, googleProvider)
+      const idToken = await result.user.getIdToken()
+      const res = await axios.post('' + import.meta.env.VITE_PROJECTS_API + '/api/portal/auth/google', { idToken })
+      if (res.data.projects.length === 1) {
+        const proyectosRes = await axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects')
+        const found = proyectosRes.data.find(p => p.id === res.data.projects[0].id)
+        if (found) await loadProjectData(found)
+      } else {
+        setClientName(res.data.clientName)
+        setClientProjects(res.data.projects)
+      }
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(err.response?.data?.error || 'No se pudo iniciar sesión con Google.')
+      }
+    } finally {
+      setLoadingGoogle(false)
+    }
+  }
+
+  const selectClientProject = async (projectId) => {
+    setLoading(true)
+    try {
+      const res = await axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects')
+      const found = res.data.find(p => p.id === projectId)
+      if (found) await loadProjectData(found)
     } catch {
       setError('Error al conectar. Intente nuevamente.')
     } finally {
@@ -62,6 +110,41 @@ function ClientPortal() {
 
   const handleLogout = () => {
     setProject(null); setCode(''); setDocs([]); setAllDocs([]); setTasks([])
+    setClientProjects(null); setClientName('')
+  }
+
+  // ── Selector de proyecto (cliente con Google y varios proyectos) ────
+  if (!project && clientProjects) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl shadow-orange-500/5 w-full max-w-lg">
+          <div className="text-center mb-6">
+            <img src="/logo-light.png" alt="DINAMIK" className="w-48 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Hola, {clientName} — selecciona un proyecto</p>
+          </div>
+          <div className="space-y-2">
+            {clientProjects.map(p => (
+              <button key={p.id} onClick={() => selectClientProject(p.id)} disabled={loading}
+                className="w-full flex items-center justify-between gap-3 bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-300 rounded-xl px-5 py-4 text-left transition disabled:opacity-50">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0"><LuFolderKanban size={17} /></span>
+                  <div className="min-w-0">
+                    <p className="text-gray-900 text-sm font-semibold truncate">{p.name}</p>
+                    <p className="text-gray-400 text-xs">{p.projectCode} · {p.progress || 0}% completado</p>
+                  </div>
+                </div>
+                <LuArrowRight size={16} className="text-gray-400 flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+          {error && <p className="text-red-500 text-xs mt-4">{error}</p>}
+          <button onClick={() => { setClientProjects(null); setClientName('') }}
+            className="flex items-center gap-1.5 text-gray-400 hover:text-gray-700 text-xs mt-6 mx-auto">
+            <LuArrowLeft size={13} /> Volver
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // ── Pantalla de ingreso ──────────────────────────────
@@ -73,6 +156,19 @@ function ClientPortal() {
             <img src="/logo-light.png" alt="DINAMIK" className="w-48 mx-auto mb-2" />
             <p className="text-gray-500 text-sm">Portal del Cliente</p>
           </div>
+
+          <button onClick={handleGoogleLogin} disabled={loadingGoogle}
+            className="w-full bg-white hover:bg-gray-50 disabled:opacity-50 text-gray-700 py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2.5 border border-gray-200 transition-colors">
+            <FcGoogle size={18} />
+            {loadingGoogle ? 'Conectando...' : 'Ingresar con Google'}
+          </button>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-gray-400 text-xs">o con tu código de proyecto</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
           <div className="space-y-4">
             <div>
               <label className="text-gray-600 text-sm block mb-2 font-medium">Código de Proyecto</label>

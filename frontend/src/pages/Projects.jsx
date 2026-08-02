@@ -36,7 +36,7 @@ const emptyForm = {
   name: '', client: '', serviceType: '', status: 'activo',
   startDate: '', endDate: '', progress: 0, assignedTo: '',
   location: '', latitude: '', longitude: '',
-  clientDocType: 'DNI', clientDocNumber: ''
+  clientDocType: 'DNI', clientDocNumber: '', clientEmail: ''
 }
 
 const getAlertInfo = (endDate, status) => {
@@ -131,6 +131,7 @@ function Projects() {
       location: p.location || '',
       latitude: p.latitude || '', longitude: p.longitude || '',
       clientDocType: p.clientDocType || 'DNI', clientDocNumber: p.clientDocNumber || '',
+      clientEmail: p.clientEmail || '',
     })
     setShowForm(true)
   }
@@ -179,6 +180,7 @@ function Projects() {
         longitude: form.longitude ? parseFloat(form.longitude) : null,
         clientDocType: form.clientDocNumber ? form.clientDocType : null,
         clientDocNumber: form.clientDocNumber || null,
+        clientEmail: form.clientEmail || null,
       }
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_PROJECTS_API}/api/projects/${editingId}`, payload)
@@ -357,6 +359,10 @@ function Projects() {
 
             <input placeholder="Cliente *" value={form.client}
               onChange={e => setForm({ ...form, client: e.target.value })}
+              className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
+            <input placeholder={form.clientDocType === 'RUC' ? 'Correo corporativo (para el portal)' : 'Correo Gmail (para el portal)'}
+              type="email" value={form.clientEmail}
+              onChange={e => setForm({ ...form, clientEmail: e.target.value })}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
             <select value={form.serviceType}
               onChange={e => setForm({ ...form, serviceType: e.target.value })}

@@ -61,6 +61,89 @@ async Task<JsonWebKeySet> GetFirebaseJwksAsync()
     return firebaseJwksCache;
 }
 
+async Task<(ClaimsPrincipal? Principal, string? Error)> ValidarTokenFirebaseAsync(string idToken)
+{
+    try
+    {
+        var jwks = await GetFirebaseJwksAsync();
+        var handler = new JwtSecurityTokenHandler();
+        handler.MapInboundClaims = false; // conservar nombres originales del token (email, sub, email_verified) sin remapear a URIs WS-Federation
+        var principal = handler.ValidateToken(idToken, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKeys        = jwks.GetSigningKeys(),
+            ValidateIssuer           = true,
+            ValidIssuer              = $"https://securetoken.google.com/{firebaseProjectId}",
+            ValidateAudience         = true,
+            ValidAudience            = firebaseProjectId,
+            ValidateLifetime         = true,
+            ClockSkew                = TimeSpan.FromMinutes(2),
+        }, out _);
+        return (principal, null);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[FirebaseAuth] Verificación de token falló: {ex}");
+        return (null, $"Token de Google inválido: {ex.Message}");
+    }
+}
+
+// Busca un cliente existente por documento o correo y lo actualiza, o crea uno nuevo.
+async Task<Guid?> UpsertClienteAsync(NpgsqlConnection conn, string? name, string? docType, string? docNumber, string? email)
+{
+    if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(docNumber) && string.IsNullOrWhiteSpace(email))
+        return null;
+
+    var tipo = docType == "RUC" ? "empresa" : docType == "DNI" ? "persona" : null;
+
+    Guid? existingId = null;
+    if (!string.IsNullOrWhiteSpace(docNumber))
+    {
+        await using var findCmd = new NpgsqlCommand("SELECT id FROM clients WHERE doc_number = @docNumber", conn);
+        findCmd.Parameters.AddWithValue("docNumber", docNumber);
+        var result = await findCmd.ExecuteScalarAsync();
+        if (result != null) existingId = (Guid)result;
+    }
+    if (existingId == null && !string.IsNullOrWhiteSpace(email))
+    {
+        await using var findCmd2 = new NpgsqlCommand("SELECT id FROM clients WHERE lower(email) = lower(@email)", conn);
+        findCmd2.Parameters.AddWithValue("email", email);
+        var result2 = await findCmd2.ExecuteScalarAsync();
+        if (result2 != null) existingId = (Guid)result2;
+    }
+
+    if (existingId != null)
+    {
+        await using var updateCmd = new NpgsqlCommand(
+            @"UPDATE clients SET
+                name       = COALESCE(@name, name),
+                tipo       = COALESCE(@tipo, tipo),
+                doc_type   = COALESCE(@docType, doc_type),
+                doc_number = COALESCE(@docNumber, doc_number),
+                email      = COALESCE(@email, email)
+              WHERE id = @id", conn);
+        updateCmd.Parameters.AddWithValue("id",         existingId.Value);
+        updateCmd.Parameters.AddWithValue("name",       (object?)name       ?? DBNull.Value);
+        updateCmd.Parameters.AddWithValue("tipo",       (object?)tipo       ?? DBNull.Value);
+        updateCmd.Parameters.AddWithValue("docType",    (object?)docType    ?? DBNull.Value);
+        updateCmd.Parameters.AddWithValue("docNumber",  (object?)docNumber  ?? DBNull.Value);
+        updateCmd.Parameters.AddWithValue("email",      (object?)email      ?? DBNull.Value);
+        await updateCmd.ExecuteNonQueryAsync();
+        return existingId;
+    }
+
+    await using var insertCmd = new NpgsqlCommand(
+        @"INSERT INTO clients (name, tipo, doc_type, doc_number, email)
+          VALUES (@name, @tipo, @docType, @docNumber, @email) RETURNING id", conn);
+    insertCmd.Parameters.AddWithValue("name",      (object?)name      ?? "Sin nombre");
+    insertCmd.Parameters.AddWithValue("tipo",      (object?)tipo      ?? DBNull.Value);
+    insertCmd.Parameters.AddWithValue("docType",   (object?)docType   ?? DBNull.Value);
+    insertCmd.Parameters.AddWithValue("docNumber", (object?)docNumber ?? DBNull.Value);
+    insertCmd.Parameters.AddWithValue("email",     (object?)email     ?? DBNull.Value);
+    var newId = await insertCmd.ExecuteScalarAsync();
+    return (Guid)newId!;
+}
+
 string GenerarToken(string id, string name, string email, string role)
 {
     var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -136,9 +219,10 @@ app.MapGet("/api/projects", async () =>
         @"SELECT p.id, p.name, p.client, p.service_type, p.status, p.start_date,
                  p.created_at, p.project_code, p.whatsapp, p.end_date, p.progress, p.assigned_to,
                  p.location, p.latitude, p.longitude, p.client_doc_type, p.client_doc_number,
-                 u.name
+                 u.name, p.client_id, c.email
           FROM projects p
           LEFT JOIN users u ON u.id = p.assigned_to
+          LEFT JOIN clients c ON c.id = p.client_id
           ORDER BY p.created_at DESC", conn);
     await using var reader = await cmd.ExecuteReaderAsync();
     while (await reader.ReadAsync())
@@ -162,7 +246,9 @@ app.MapGet("/api/projects", async () =>
             longitude      = reader.IsDBNull(14) ? (decimal?)null : reader.GetDecimal(14),
             clientDocType   = reader.IsDBNull(15) ? null : reader.GetString(15),
             clientDocNumber = reader.IsDBNull(16) ? null : reader.GetString(16),
-            assignedToName  = reader.IsDBNull(17) ? null : reader.GetString(17)
+            assignedToName  = reader.IsDBNull(17) ? null : reader.GetString(17),
+            clientId        = reader.IsDBNull(18) ? null : reader.GetGuid(18).ToString(),
+            clientEmail     = reader.IsDBNull(19) ? null : reader.GetString(19),
         });
     }
     return Results.Ok(projects);
@@ -173,10 +259,11 @@ app.MapPost("/api/projects", async (ProjectRequest req) =>
 {
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
+    var clientId = await UpsertClienteAsync(conn, req.Client, req.ClientDocType, req.ClientDocNumber, req.ClientEmail);
     await using var cmd = new NpgsqlCommand(
-        @"INSERT INTO projects (name, client, service_type, status, start_date, end_date, progress, project_code, assigned_to, location, latitude, longitude, client_doc_type, client_doc_number)
+        @"INSERT INTO projects (name, client, service_type, status, start_date, end_date, progress, project_code, assigned_to, location, latitude, longitude, client_doc_type, client_doc_number, client_id)
           VALUES (@name, @client, @serviceType, @status, @startDate, @endDate, @progress,
-                  'DIN-' || UPPER(SUBSTRING(gen_random_uuid()::text, 1, 6)), @assignedTo, @location, @latitude, @longitude, @clientDocType, @clientDocNumber)
+                  'DIN-' || UPPER(SUBSTRING(gen_random_uuid()::text, 1, 6)), @assignedTo, @location, @latitude, @longitude, @clientDocType, @clientDocNumber, @clientId)
           RETURNING id, project_code", conn);
     cmd.Parameters.AddWithValue("name",        req.Name);
     cmd.Parameters.AddWithValue("client",      req.Client      ?? (object)DBNull.Value);
@@ -191,6 +278,7 @@ app.MapPost("/api/projects", async (ProjectRequest req) =>
     cmd.Parameters.AddWithValue("longitude", req.Longitude.HasValue ? req.Longitude.Value : DBNull.Value);
     cmd.Parameters.AddWithValue("clientDocType",   req.ClientDocType   ?? (object)DBNull.Value);
     cmd.Parameters.AddWithValue("clientDocNumber", req.ClientDocNumber ?? (object)DBNull.Value);
+    cmd.Parameters.AddWithValue("clientId",  (object?)clientId ?? DBNull.Value);
     await using var reader = await cmd.ExecuteReaderAsync();
     if (await reader.ReadAsync())
         return Results.Ok(new { id = reader.GetGuid(0), projectCode = reader.GetString(1) });
@@ -202,13 +290,15 @@ app.MapPut("/api/projects/{id}", async (string id, ProjectRequest req) =>
 {
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
+    var clientId = await UpsertClienteAsync(conn, req.Client, req.ClientDocType, req.ClientDocNumber, req.ClientEmail);
     await using var cmd = new NpgsqlCommand(
         @"UPDATE projects SET
             name=@name, client=@client, service_type=@serviceType,
             status=@status, start_date=@startDate, end_date=@endDate,
             progress=@progress, assigned_to=@assignedTo,
             location=@location, latitude=@latitude, longitude=@longitude,
-            client_doc_type=@clientDocType, client_doc_number=@clientDocNumber
+            client_doc_type=@clientDocType, client_doc_number=@clientDocNumber,
+            client_id=COALESCE(@clientId, client_id)
           WHERE id=@id", conn);
     cmd.Parameters.AddWithValue("id",          Guid.Parse(id));
     cmd.Parameters.AddWithValue("name",        req.Name);
@@ -224,6 +314,7 @@ app.MapPut("/api/projects/{id}", async (string id, ProjectRequest req) =>
     cmd.Parameters.AddWithValue("longitude", req.Longitude.HasValue ? req.Longitude.Value : DBNull.Value);
     cmd.Parameters.AddWithValue("clientDocType",   req.ClientDocType   ?? (object)DBNull.Value);
     cmd.Parameters.AddWithValue("clientDocNumber", req.ClientDocNumber ?? (object)DBNull.Value);
+    cmd.Parameters.AddWithValue("clientId",  (object?)clientId ?? DBNull.Value);
     await cmd.ExecuteNonQueryAsync();
     return Results.Ok(new { success = true });
 });
@@ -426,29 +517,9 @@ app.MapPost("/api/users", async (UserRequest req) =>
 // con un usuario ya creado en el panel; no se crean cuentas automáticamente.
 app.MapPost("/api/auth/google", async (GoogleAuthRequest req) =>
 {
-    ClaimsPrincipal principal;
-    try
-    {
-        var jwks = await GetFirebaseJwksAsync();
-        var handler = new JwtSecurityTokenHandler();
-        handler.MapInboundClaims = false; // conservar nombres originales del token (email, sub, email_verified) sin remapear a URIs WS-Federation
-        principal = handler.ValidateToken(req.IdToken, new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKeys        = jwks.GetSigningKeys(),
-            ValidateIssuer           = true,
-            ValidIssuer              = $"https://securetoken.google.com/{firebaseProjectId}",
-            ValidateAudience         = true,
-            ValidAudience            = firebaseProjectId,
-            ValidateLifetime         = true,
-            ClockSkew                = TimeSpan.FromMinutes(2),
-        }, out _);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[GoogleAuth] Verificación de token falló: {ex}");
-        return Results.Json(new { error = $"Token de Google inválido: {ex.Message}" }, statusCode: 401);
-    }
+    var (principal, tokenError) = await ValidarTokenFirebaseAsync(req.IdToken);
+    if (principal == null)
+        return Results.Json(new { error = tokenError }, statusCode: 401);
 
     var email         = principal.FindFirst("email")?.Value;
     var uid           = principal.FindFirst("user_id")?.Value ?? principal.FindFirst("sub")?.Value;
@@ -486,6 +557,115 @@ app.MapPost("/api/auth/google", async (GoogleAuthRequest req) =>
 
     var token = GenerarToken(id, name, userEmail, role);
     return Results.Ok(new { id, name, email = userEmail, role, token });
+});
+
+// POST login de cliente en el portal con Google (Firebase Auth) — el correo debe
+// coincidir con un cliente ya registrado (creado al capturar el correo en un proyecto).
+// Devuelve todos los proyectos asociados a ese cliente para que el portal los liste.
+app.MapPost("/api/portal/auth/google", async (GoogleAuthRequest req) =>
+{
+    var (principal, tokenError) = await ValidarTokenFirebaseAsync(req.IdToken);
+    if (principal == null)
+        return Results.Json(new { error = tokenError }, statusCode: 401);
+
+    var email         = principal.FindFirst("email")?.Value;
+    var uid           = principal.FindFirst("user_id")?.Value ?? principal.FindFirst("sub")?.Value;
+    var emailVerified = principal.FindFirst("email_verified")?.Value;
+
+    if (string.IsNullOrWhiteSpace(email) || !string.Equals(emailVerified, "true", StringComparison.OrdinalIgnoreCase))
+        return Results.Json(new { error = "El token de Google no incluye un correo verificado." }, statusCode: 401);
+
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var clientCmd = new NpgsqlCommand(
+        "SELECT id, name FROM clients WHERE lower(email) = lower(@email)", conn);
+    clientCmd.Parameters.AddWithValue("email", email);
+    await using var clientReader = await clientCmd.ExecuteReaderAsync();
+    if (!await clientReader.ReadAsync())
+    {
+        await clientReader.CloseAsync();
+        return Results.Json(new { error = "Tu correo no está asociado a ningún proyecto. Contacta a DINAMIK." }, statusCode: 403);
+    }
+    var clientId   = clientReader.GetGuid(0);
+    var clientName = clientReader.GetString(1);
+    await clientReader.CloseAsync();
+
+    await using var updateCmd = new NpgsqlCommand("UPDATE clients SET firebase_uid = @uid WHERE id = @id", conn);
+    updateCmd.Parameters.AddWithValue("uid", (object?)uid ?? DBNull.Value);
+    updateCmd.Parameters.AddWithValue("id",  clientId);
+    await updateCmd.ExecuteNonQueryAsync();
+
+    var projects = new List<object>();
+    await using var projCmd = new NpgsqlCommand(
+        @"SELECT id, name, project_code, status, progress, end_date
+          FROM projects WHERE client_id = @clientId ORDER BY created_at DESC", conn);
+    projCmd.Parameters.AddWithValue("clientId", clientId);
+    await using var projReader = await projCmd.ExecuteReaderAsync();
+    while (await projReader.ReadAsync())
+        projects.Add(new {
+            id          = projReader.GetGuid(0),
+            name        = projReader.GetString(1),
+            projectCode = projReader.IsDBNull(2) ? null : projReader.GetString(2),
+            status      = projReader.IsDBNull(3) ? null : projReader.GetString(3),
+            progress    = projReader.IsDBNull(4) ? 0    : projReader.GetInt32(4),
+            endDate     = projReader.IsDBNull(5) ? null : projReader.GetDateTime(5).ToString("yyyy-MM-dd"),
+        });
+
+    if (projects.Count == 0)
+        return Results.Json(new { error = "Tu correo no tiene proyectos registrados todavía." }, statusCode: 403);
+
+    return Results.Ok(new { clientId, clientName, projects });
+});
+
+// GET todos los clientes (con cantidad de proyectos)
+app.MapGet("/api/clients", async () =>
+{
+    var clients = new List<object>();
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        @"SELECT c.id, c.name, c.tipo, c.doc_type, c.doc_number, c.email, c.created_at,
+                 (SELECT COUNT(*) FROM projects p WHERE p.client_id = c.id) AS project_count,
+                 c.firebase_uid
+          FROM clients c
+          ORDER BY c.created_at DESC", conn);
+    await using var reader = await cmd.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+        clients.Add(new {
+            id             = reader.GetGuid(0),
+            name           = reader.GetString(1),
+            tipo           = reader.IsDBNull(2) ? null : reader.GetString(2),
+            docType        = reader.IsDBNull(3) ? null : reader.GetString(3),
+            docNumber      = reader.IsDBNull(4) ? null : reader.GetString(4),
+            email          = reader.IsDBNull(5) ? null : reader.GetString(5),
+            createdAt      = reader.GetDateTime(6),
+            projectCount   = reader.GetInt64(7),
+            firebaseLinked = !reader.IsDBNull(8),
+        });
+    return Results.Ok(clients);
+});
+
+// PUT editar cliente (ej. completar el correo sin tener que volver a editar un proyecto)
+app.MapPut("/api/clients/{id}", async (string id, ClientRequest req) =>
+{
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        @"UPDATE clients SET
+            name       = COALESCE(@name, name),
+            tipo       = COALESCE(@tipo, tipo),
+            doc_type   = COALESCE(@docType, doc_type),
+            doc_number = COALESCE(@docNumber, doc_number),
+            email      = @email
+          WHERE id = @id", conn);
+    cmd.Parameters.AddWithValue("id",        Guid.Parse(id));
+    cmd.Parameters.AddWithValue("name",      (object?)req.Name      ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("tipo",      (object?)req.Tipo      ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("docType",   (object?)req.DocType   ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("docNumber", (object?)req.DocNumber ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("email",     (object?)req.Email     ?? DBNull.Value);
+    await cmd.ExecuteNonQueryAsync();
+    return Results.Ok(new { success = true });
 });
 
 // PATCH cambiar rol
@@ -851,7 +1031,8 @@ REGLAS:
 
 app.Run();
 
-record ProjectRequest(string Name, string? Client, string? ServiceType, string? Status, DateOnly? StartDate, DateOnly? EndDate, int? Progress, string? AssignedTo, string? Location, decimal? Latitude, decimal? Longitude, string? ClientDocType, string? ClientDocNumber);
+record ProjectRequest(string Name, string? Client, string? ServiceType, string? Status, DateOnly? StartDate, DateOnly? EndDate, int? Progress, string? AssignedTo, string? Location, decimal? Latitude, decimal? Longitude, string? ClientDocType, string? ClientDocNumber, string? ClientEmail);
+record ClientRequest(string? Name, string? Tipo, string? DocType, string? DocNumber, string? Email);
 record LoginRequest(string Email, string Password);
 record TokenRequest(string Token);
 record UserRequest(string FirstName, string LastName, string Email, string? Password, string? Role, string? Dni, string? Sede);

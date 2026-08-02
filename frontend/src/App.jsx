@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Documents from './pages/Documents'
 import Users from './pages/Users'
+import Clients from './pages/Clients'
 import Tasks from './pages/Tasks'
 import ProjectTracking from './pages/ProjectTracking'
 import ProjectDetail from './pages/ProjectDetail'
@@ -97,9 +98,14 @@ function App() {
                     : <Navigate to="/" />
                 } />
                 <Route path="/users" element={
-                  
+
                   user.role === 'admin'
                     ? <Users />
+                    : <Navigate to="/" />
+                } />
+                <Route path="/clients" element={
+                  user.role === 'admin'
+                    ? <Clients />
                     : <Navigate to="/" />
                 } />
                 <Route path="/projects/:projectId/tasks" element={<Tasks />} />

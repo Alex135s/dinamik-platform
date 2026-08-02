@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LuLayoutDashboard, LuHardHat, LuFolder, LuImage, LuTrendingUp, LuUsers, LuSettings, LuMenu } from 'react-icons/lu'
+import { LuLayoutDashboard, LuHardHat, LuFolder, LuImage, LuTrendingUp, LuUsers, LuContact, LuSettings, LuMenu } from 'react-icons/lu'
 import ChatbotAdmin from '../components/ChatbotAdmin'
 import { useSettings } from '../context/SettingsContext'
 
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/documents', label: 'documents',  Icon: LuFolder },
   { path: '/portfolio-admin', label: 'Galería Web', Icon: LuImage },
   { path: '/tracking',  label: 'tracking',   Icon: LuTrendingUp },
+  { path: '/clients',   label: 'clients',    Icon: LuContact },
   { path: '/users',     label: 'users',      Icon: LuUsers },
   { path: '/settings',  label: 'settings',   Icon: LuSettings },
 ]
@@ -24,6 +25,7 @@ function MainLayout({ children, user, onLogout }) {
 
   const visibleItems = navItems
     .filter(item => item.path !== '/users'           || user?.role === 'admin')
+    .filter(item => item.path !== '/clients'         || user?.role === 'admin')
     .filter(item => item.path !== '/portfolio-admin' || user?.role === 'admin')
     .filter(item => item.path !== '/tracking'        || user?.role === 'admin' || user?.role === 'tecnico')
 
