@@ -443,9 +443,10 @@ app.MapPost("/api/auth/google", async (GoogleAuthRequest req) =>
             ClockSkew                = TimeSpan.FromMinutes(2),
         }, out _);
     }
-    catch
+    catch (Exception ex)
     {
-        return Results.Unauthorized();
+        Console.WriteLine($"[GoogleAuth] Verificación de token falló: {ex}");
+        return Results.Json(new { error = $"Token de Google inválido: {ex.Message}" }, statusCode: 401);
     }
 
     var email         = principal.FindFirst("email")?.Value;
@@ -453,7 +454,10 @@ app.MapPost("/api/auth/google", async (GoogleAuthRequest req) =>
     var emailVerified = principal.FindFirst("email_verified")?.Value;
 
     if (string.IsNullOrWhiteSpace(email) || !string.Equals(emailVerified, "true", StringComparison.OrdinalIgnoreCase))
-        return Results.Unauthorized();
+    {
+        Console.WriteLine($"[GoogleAuth] Claims incompletos: email='{email}', email_verified='{emailVerified}'");
+        return Results.Json(new { error = "El token de Google no incluye un correo verificado." }, statusCode: 401);
+    }
 
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
