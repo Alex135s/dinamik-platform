@@ -43,6 +43,24 @@ string jwtKey  = "DinamikPlatform2026ClaveSecreta!!";
 string apiPeruToken = builder.Configuration["ApiPeru:Token"] ?? "";
 var httpApiPeru = new HttpClient();
 
+// Login de técnicos con Google vía Firebase Auth: los ID tokens de Firebase se verifican
+// contra las llaves públicas de Google (sin necesitar credenciales de servicio).
+const string firebaseProjectId = "dinamik-platform";
+var httpFirebase = new HttpClient();
+JsonWebKeySet? firebaseJwksCache = null;
+DateTime firebaseJwksCacheExpiry = DateTime.MinValue;
+
+async Task<JsonWebKeySet> GetFirebaseJwksAsync()
+{
+    if (firebaseJwksCache != null && DateTime.UtcNow < firebaseJwksCacheExpiry)
+        return firebaseJwksCache;
+    var json = await httpFirebase.GetStringAsync(
+        "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com");
+    firebaseJwksCache = new JsonWebKeySet(json);
+    firebaseJwksCacheExpiry = DateTime.UtcNow.AddHours(1);
+    return firebaseJwksCache;
+}
+
 string GenerarToken(string id, string name, string email, string role)
 {
     var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -244,18 +262,24 @@ app.MapGet("/api/lookup/dni/{dni}", async (string dni) =>
 
         string? Get(string prop) => data.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
+        var nombres          = Get("nombres");
+        var apellidoPaterno  = Get("apellido_paterno");
+        var apellidoMaterno  = Get("apellido_materno");
+        var apellidos        = string.Join(" ", new[] { apellidoPaterno, apellidoMaterno }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
         var nombreCompleto = Get("nombre_completo");
         if (string.IsNullOrWhiteSpace(nombreCompleto))
-        {
-            var partes = new[] { Get("nombres"), Get("apellido_paterno"), Get("apellido_materno") }
-                .Where(s => !string.IsNullOrWhiteSpace(s));
-            nombreCompleto = string.Join(" ", partes);
-        }
+            nombreCompleto = string.Join(" ", new[] { nombres, apellidos }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
         if (string.IsNullOrWhiteSpace(nombreCompleto))
             return Results.Ok(new { found = false, error = "No se encontró el DNI." });
 
-        return Results.Ok(new { found = true, name = nombreCompleto.Trim() });
+        return Results.Ok(new {
+            found     = true,
+            name      = nombreCompleto.Trim(),
+            firstName = string.IsNullOrWhiteSpace(nombres)   ? null : nombres.Trim(),
+            lastName  = string.IsNullOrWhiteSpace(apellidos) ? null : apellidos.Trim(),
+        });
     }
     catch
     {
@@ -348,15 +372,21 @@ app.MapGet("/api/users", async () =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC", conn);
+        @"SELECT id, name, email, role, created_at, first_name, last_name, dni, sede, firebase_uid
+          FROM users ORDER BY created_at DESC", conn);
     await using var reader = await cmd.ExecuteReaderAsync();
     while (await reader.ReadAsync())
         users.Add(new {
-            id        = reader.GetGuid(0),
-            name      = reader.GetString(1),
-            email     = reader.GetString(2),
-            role      = reader.GetString(3),
-            createdAt = reader.GetDateTime(4)
+            id             = reader.GetGuid(0),
+            name           = reader.GetString(1),
+            email          = reader.GetString(2),
+            role           = reader.GetString(3),
+            createdAt      = reader.GetDateTime(4),
+            firstName      = reader.IsDBNull(5) ? null : reader.GetString(5),
+            lastName       = reader.IsDBNull(6) ? null : reader.GetString(6),
+            dni            = reader.IsDBNull(7) ? null : reader.GetString(7),
+            sede           = reader.IsDBNull(8) ? null : reader.GetString(8),
+            firebaseLinked = !reader.IsDBNull(9),
         });
     return Results.Ok(users);
 });
@@ -364,6 +394,11 @@ app.MapGet("/api/users", async () =>
 // POST crear usuario
 app.MapPost("/api/users", async (UserRequest req) =>
 {
+    if (string.IsNullOrWhiteSpace(req.FirstName) || string.IsNullOrWhiteSpace(req.LastName))
+        return Results.BadRequest(new { error = "Nombre y apellido son obligatorios." });
+
+    var name = $"{req.FirstName.Trim()} {req.LastName.Trim()}";
+
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var checkCmd = new NpgsqlCommand(
@@ -373,13 +408,79 @@ app.MapPost("/api/users", async (UserRequest req) =>
     if (count > 0)
         return Results.BadRequest(new { error = "El email ya está registrado." });
     await using var cmd = new NpgsqlCommand(
-        "INSERT INTO users (name, email, password, role) VALUES (@name, @email, @password, @role) RETURNING id", conn);
-    cmd.Parameters.AddWithValue("name",     req.Name);
-    cmd.Parameters.AddWithValue("email",    req.Email);
-    cmd.Parameters.AddWithValue("password", req.Password);
-    cmd.Parameters.AddWithValue("role",     req.Role ?? "tecnico");
+        @"INSERT INTO users (name, first_name, last_name, email, password, role, dni, sede)
+          VALUES (@name, @firstName, @lastName, @email, @password, @role, @dni, @sede) RETURNING id", conn);
+    cmd.Parameters.AddWithValue("name",      name);
+    cmd.Parameters.AddWithValue("firstName", req.FirstName.Trim());
+    cmd.Parameters.AddWithValue("lastName",  req.LastName.Trim());
+    cmd.Parameters.AddWithValue("email",     req.Email);
+    cmd.Parameters.AddWithValue("password",  (object?)req.Password ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("role",      req.Role ?? "tecnico");
+    cmd.Parameters.AddWithValue("dni",       (object?)req.Dni  ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("sede",      (object?)req.Sede ?? DBNull.Value);
     var id = await cmd.ExecuteScalarAsync();
     return Results.Ok(new { id });
+});
+
+// POST login de técnico/admin con Google (Firebase Auth) — el correo debe coincidir
+// con un usuario ya creado en el panel; no se crean cuentas automáticamente.
+app.MapPost("/api/auth/google", async (GoogleAuthRequest req) =>
+{
+    ClaimsPrincipal principal;
+    try
+    {
+        var jwks = await GetFirebaseJwksAsync();
+        var handler = new JwtSecurityTokenHandler();
+        principal = handler.ValidateToken(req.IdToken, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKeys        = jwks.GetSigningKeys(),
+            ValidateIssuer           = true,
+            ValidIssuer              = $"https://securetoken.google.com/{firebaseProjectId}",
+            ValidateAudience         = true,
+            ValidAudience            = firebaseProjectId,
+            ValidateLifetime         = true,
+            ClockSkew                = TimeSpan.FromMinutes(2),
+        }, out _);
+    }
+    catch
+    {
+        return Results.Unauthorized();
+    }
+
+    var email         = principal.FindFirst("email")?.Value;
+    var uid           = principal.FindFirst("user_id")?.Value ?? principal.FindFirst("sub")?.Value;
+    var emailVerified = principal.FindFirst("email_verified")?.Value;
+
+    if (string.IsNullOrWhiteSpace(email) || !string.Equals(emailVerified, "true", StringComparison.OrdinalIgnoreCase))
+        return Results.Unauthorized();
+
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        "SELECT id, name, email, role FROM users WHERE lower(email) = lower(@email)", conn);
+    cmd.Parameters.AddWithValue("email", email);
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        await reader.CloseAsync();
+        return Results.Json(new { error = "Tu correo no está registrado. Pide a un administrador que te cree una cuenta en DINAMIK." }, statusCode: 403);
+    }
+
+    var id         = reader.GetGuid(0).ToString();
+    var name       = reader.GetString(1);
+    var userEmail  = reader.GetString(2);
+    var role       = reader.GetString(3);
+    await reader.CloseAsync();
+
+    await using var updateCmd = new NpgsqlCommand(
+        "UPDATE users SET firebase_uid = @uid WHERE id = @id", conn);
+    updateCmd.Parameters.AddWithValue("uid", (object?)uid ?? DBNull.Value);
+    updateCmd.Parameters.AddWithValue("id",  Guid.Parse(id));
+    await updateCmd.ExecuteNonQueryAsync();
+
+    var token = GenerarToken(id, name, userEmail, role);
+    return Results.Ok(new { id, name, email = userEmail, role, token });
 });
 
 // PATCH cambiar rol
@@ -748,7 +849,8 @@ app.Run();
 record ProjectRequest(string Name, string? Client, string? ServiceType, string? Status, DateOnly? StartDate, DateOnly? EndDate, int? Progress, string? AssignedTo, string? Location, decimal? Latitude, decimal? Longitude, string? ClientDocType, string? ClientDocNumber);
 record LoginRequest(string Email, string Password);
 record TokenRequest(string Token);
-record UserRequest(string Name, string Email, string Password, string? Role);
+record UserRequest(string FirstName, string LastName, string Email, string? Password, string? Role, string? Dni, string? Sede);
+record GoogleAuthRequest(string IdToken);
 record RoleRequest(string Role);
 record TaskRequest(string ProjectId, string Title, string? Description, string? Status, string? Priority, string? AssignedTo, DateOnly? DueDate);
 record TaskStatusRequest(string Status);
