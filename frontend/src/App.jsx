@@ -104,7 +104,11 @@ function App() {
                     : <Navigate to="/" />
                 } />
                 <Route path="/projects/:projectId/tasks" element={<Tasks />} />
-                <Route path="/tracking" element={<ProjectTracking />} />
+                <Route path="/tracking" element={
+                  user.role === 'admin' || user.role === 'ingeniero'
+                    ? <ProjectTracking />
+                    : <Navigate to="/" />
+                } />
                 <Route path="/projects/:projectId/detail" element={<ProjectDetail />} />
                 <Route path="/portfolio-admin" element={
                   user.role === 'admin'

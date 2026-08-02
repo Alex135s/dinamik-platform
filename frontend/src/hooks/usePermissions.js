@@ -60,9 +60,9 @@ export function usePermissions() {
       canEdit:   role === 'admin' || role === 'empleado',
     },
 
-    // Seguimiento
+    // Seguimiento (salud/avance técnico del proyecto)
     tracking: {
-      canView: true,
+      canView: role === 'admin' || role === 'ingeniero',
     },
   }
 }

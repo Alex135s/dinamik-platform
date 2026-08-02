@@ -28,6 +28,7 @@ function MainLayout({ children, user, onLogout }) {
     .filter(item => item.path !== '/users'           || user?.role === 'admin')
     .filter(item => item.path !== '/clients'         || user?.role === 'admin' || user?.role === 'empleado')
     .filter(item => item.path !== '/portfolio-admin' || user?.role === 'admin')
+    .filter(item => item.path !== '/tracking'        || user?.role === 'admin' || user?.role === 'ingeniero')
 
   return (
     <div className="flex min-h-screen bg-gray-950">
@@ -38,8 +39,8 @@ function MainLayout({ children, user, onLogout }) {
           onClick={() => setMenuOpen(false)} />
       )}
 
-      {/* Barra lateral (fija en escritorio, deslizable en móvil) */}
-      <aside className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-gray-900 border-r border-gray-800 flex flex-col
+      {/* Barra lateral (fija al viewport siempre, deslizable en móvil) */}
+      <aside className={`fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-gray-900 border-r border-gray-800 flex flex-col
         transform transition-transform duration-200 md:translate-x-0
         ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
