@@ -2,6 +2,7 @@ import { useState } from 'react'
 import axios from 'axios'
 import { signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '../firebase'
+import AuthSplitPanel from '../components/AuthSplitPanel'
 import Chatbot from '../components/Chatbot'
 import PDFViewerProtected from '../components/PDFViewerProtected'
 import { isPDF } from '../components/portal/portalData'
@@ -116,81 +117,75 @@ function ClientPortal() {
   // ── Selector de proyecto (cliente con Google y varios proyectos) ────
   if (!project && clientProjects) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl shadow-orange-500/5 w-full max-w-lg">
-          <div className="text-center mb-6">
-            <img src="/logo-light.png" alt="DINAMIK" className="w-48 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">Hola, {clientName} — selecciona un proyecto</p>
-          </div>
-          <div className="space-y-2">
-            {clientProjects.map(p => (
-              <button key={p.id} onClick={() => selectClientProject(p.id)} disabled={loading}
-                className="w-full flex items-center justify-between gap-3 bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-300 rounded-xl px-5 py-4 text-left transition disabled:opacity-50">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0"><LuFolderKanban size={17} /></span>
-                  <div className="min-w-0">
-                    <p className="text-gray-900 text-sm font-semibold truncate">{p.name}</p>
-                    <p className="text-gray-400 text-xs">{p.projectCode} · {p.progress || 0}% completado</p>
-                  </div>
+      <AuthSplitPanel tagline="Portal del Cliente" subtitle="Seguimiento de tu proyecto en un solo lugar">
+        <button onClick={() => { setClientProjects(null); setClientName('') }}
+          className="flex items-center gap-1.5 text-gray-500 hover:text-gray-800 text-sm mb-8 transition-colors w-fit">
+          <LuArrowLeft size={15} /> Volver
+        </button>
+
+        <h1 className="text-2xl font-black text-gray-900">Hola, {clientName}</h1>
+        <p className="text-gray-500 text-sm mt-2 mb-6">Selecciona el proyecto que quieres ver.</p>
+
+        <div className="space-y-2">
+          {clientProjects.map(p => (
+            <button key={p.id} onClick={() => selectClientProject(p.id)} disabled={loading}
+              className="w-full flex items-center justify-between gap-3 bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-300 rounded-xl px-5 py-4 text-left transition disabled:opacity-50">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0"><LuFolderKanban size={17} /></span>
+                <div className="min-w-0">
+                  <p className="text-gray-900 text-sm font-semibold truncate">{p.name}</p>
+                  <p className="text-gray-400 text-xs">{p.projectCode} · {p.progress || 0}% completado</p>
                 </div>
-                <LuArrowRight size={16} className="text-gray-400 flex-shrink-0" />
-              </button>
-            ))}
-          </div>
-          {error && <p className="text-red-500 text-xs mt-4">{error}</p>}
-          <button onClick={() => { setClientProjects(null); setClientName('') }}
-            className="flex items-center gap-1.5 text-gray-400 hover:text-gray-700 text-xs mt-6 mx-auto">
-            <LuArrowLeft size={13} /> Volver
-          </button>
+              </div>
+              <LuArrowRight size={16} className="text-gray-400 flex-shrink-0" />
+            </button>
+          ))}
         </div>
-      </div>
+        {error && <p className="text-red-500 text-xs mt-4">{error}</p>}
+      </AuthSplitPanel>
     )
   }
 
   // ── Pantalla de ingreso ──────────────────────────────
   if (!project) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-xl shadow-orange-500/5 w-full max-w-md">
-          <div className="text-center mb-8">
-            <img src="/logo-light.png" alt="DINAMIK" className="w-48 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">Portal del Cliente</p>
-          </div>
+      <AuthSplitPanel tagline="Portal del Cliente" subtitle="Seguimiento de tu proyecto en un solo lugar">
+        <h1 className="text-3xl font-black text-gray-900">Portal del Cliente</h1>
+        <p className="text-gray-500 text-sm mt-2 mb-8">Ingresa con Google o tu código de proyecto.</p>
 
-          <button onClick={handleGoogleLogin} disabled={loadingGoogle}
-            className="w-full bg-white hover:bg-gray-50 disabled:opacity-50 text-gray-700 py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2.5 border border-gray-200 transition-colors">
-            <FcGoogle size={18} />
-            {loadingGoogle ? 'Conectando...' : 'Ingresar con Google'}
-          </button>
+        <button onClick={handleGoogleLogin} disabled={loadingGoogle}
+          className="w-full bg-white hover:bg-gray-50 disabled:opacity-50 text-gray-700 py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2.5 border border-gray-200 transition-colors">
+          <FcGoogle size={18} />
+          {loadingGoogle ? 'Conectando...' : 'Ingresar con Google'}
+        </button>
 
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-gray-400 text-xs">o con tu código de proyecto</span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-gray-600 text-sm block mb-2 font-medium">Código de Proyecto</label>
-              <input
-                placeholder="Ej: DIN-3AAC68"
-                value={code}
-                onChange={e => setCode(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                className="w-full bg-gray-50 text-gray-900 rounded-xl px-4 py-3 text-sm border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
-              />
-            </div>
-            {error && <p className="text-red-500 text-xs">{error}</p>}
-            <button onClick={handleLogin} disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/25 transition">
-              {loading ? 'Verificando...' : 'Ingresar al Portal'}
-            </button>
-          </div>
-          <p className="text-gray-400 text-xs text-center mt-6">
-            ¿No tienes tu código? Contáctanos al +51 962 744 341
-          </p>
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-gray-400 text-xs">O con tu código de proyecto</span>
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
-      </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-gray-700 text-sm font-medium block mb-1.5">Código de Proyecto</label>
+            <input
+              placeholder="Ej: DIN-3AAC68"
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              className="w-full bg-white text-gray-900 rounded-xl px-4 py-3 text-sm border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
+            />
+          </div>
+          {error && <p className="text-red-500 text-xs">{error}</p>}
+          <button onClick={handleLogin} disabled={loading}
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/25 transition">
+            {loading ? 'Verificando...' : 'Ingresar al Portal'}
+          </button>
+        </div>
+        <p className="text-gray-400 text-xs text-center mt-6">
+          ¿No tienes tu código? Contáctanos al +51 962 744 341
+        </p>
+      </AuthSplitPanel>
     )
   }
 
