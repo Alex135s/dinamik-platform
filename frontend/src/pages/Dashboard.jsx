@@ -10,7 +10,7 @@ import {
   LuBell, LuCircleAlert, LuTriangleAlert, LuClock, LuHourglass, LuRefreshCw,
   LuCircleCheckBig, LuAlarmClock, LuFolderKanban, LuActivity, LuLoader,
   LuChartPie, LuArrowRight, LuTable2, LuListChecks, LuCalendarClock,
-  LuBuilding2, LuFlag,
+  LuBuilding2, LuFlag, LuHardHat, LuCuboid, LuMap, LuClipboardCheck,
 } from 'react-icons/lu'
 
 const statusColors = {
@@ -18,6 +18,15 @@ const statusColors = {
   en_proceso: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
   completado: { bg: 'bg-blue-500/20',   text: 'text-blue-400'   },
 }
+
+const serviceIcons = {
+  estructural:  { Icon: LuHardHat,        bg: 'bg-gradient-to-br from-orange-500 to-orange-600' },
+  BIM:          { Icon: LuCuboid,         bg: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+  topografia:   { Icon: LuMap,            bg: 'bg-gradient-to-br from-rose-500 to-rose-600' },
+  viabilidad:   { Icon: LuClipboardCheck, bg: 'bg-gradient-to-br from-teal-500 to-teal-600' },
+  construccion: { Icon: LuBuilding2,      bg: 'bg-gradient-to-br from-amber-500 to-amber-600' },
+}
+const serviceIconDefault = { Icon: LuFolderKanban, bg: 'bg-gradient-to-br from-gray-500 to-gray-600' }
 
 const taskStatusColors = {
   pendiente:   { bg: 'bg-gray-500/20',   text: 'text-gray-400'   },
@@ -396,35 +405,43 @@ function Dashboard() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-700 text-left">
-                  <th className="px-5 py-3 font-medium text-gray-400">Proyecto</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Cliente</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Servicio</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Estado</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Progreso</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Vence</th>
+                <tr className="text-left">
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Proyecto</th>
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Cliente</th>
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Estado</th>
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Progreso</th>
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide text-right">Vence</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-700/50">
                 {proyectosTabla.map(p => {
                   const colors = statusColors[p.status] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
                   const vencido = p.endDate && p.status !== 'completado' && new Date(p.endDate) < hoy
+                  const service = serviceIcons[p.serviceType] || serviceIconDefault
                   return (
                     <tr key={p.id}
                       onClick={() => navigate(`/projects/${p.id}/detail`)}
-                      className="border-b border-gray-700/60 last:border-0 hover:bg-gray-700/40 cursor-pointer transition-colors">
-                      <td className="px-5 py-3">
-                        <p className="text-white font-medium">{p.name}</p>
-                        {p.projectCode && <p className="text-orange-500 text-xs font-mono">{p.projectCode}</p>}
+                      className="hover:bg-gray-700/30 cursor-pointer transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0 ${service.bg}`}>
+                            <service.Icon size={17} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-white font-medium truncate">{p.name}</p>
+                            <p className="text-gray-500 text-xs">
+                              {p.projectCode}{p.serviceType && ` · ${p.serviceType}`}
+                            </p>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-5 py-3 text-gray-300">{p.client || '—'}</td>
-                      <td className="px-5 py-3 text-gray-300">{p.serviceType || '—'}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-4 text-gray-300">{p.client || '—'}</td>
+                      <td className="px-5 py-4">
                         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text}`}>
                           {p.status}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-2 min-w-[100px]">
                           <div className="flex-1 bg-gray-700 rounded-full h-1.5">
                             <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${p.progress || 0}%` }} />
@@ -432,8 +449,8 @@ function Dashboard() {
                           <span className="text-gray-400 text-xs w-8 text-right">{p.progress || 0}%</span>
                         </div>
                       </td>
-                      <td className={`px-5 py-3 flex items-center gap-1.5 ${vencido ? 'text-red-400' : 'text-gray-400'}`}>
-                        <LuCalendarClock size={13} /> {fmtDate(p.endDate)}
+                      <td className={`px-5 py-4 text-right whitespace-nowrap ${vencido ? 'text-red-400' : 'text-gray-400'}`}>
+                        <span className="inline-flex items-center gap-1.5"><LuCalendarClock size={13} /> {fmtDate(p.endDate)}</span>
                       </td>
                     </tr>
                   )

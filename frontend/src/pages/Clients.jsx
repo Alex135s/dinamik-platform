@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
-import { LuContact, LuBuilding2, LuUserRound, LuMail, LuIdCard, LuFolderKanban, LuPencil, LuCheck, LuX } from 'react-icons/lu'
+import { getInitials } from '../components/portal/portalData'
+import { LuContact, LuMail, LuFolderKanban, LuPencil, LuCheck, LuX } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
 
 const tipoInfo = {
-  empresa: { label: 'Empresa', bg: 'bg-blue-500/20',   text: 'text-blue-400',   Icon: LuBuilding2 },
-  persona: { label: 'Persona', bg: 'bg-green-500/20',  text: 'text-green-400',  Icon: LuUserRound },
+  empresa: { label: 'Empresa', avatar: 'bg-gradient-to-br from-blue-500 to-blue-600' },
+  persona: { label: 'Persona', avatar: 'bg-gradient-to-br from-green-500 to-green-600' },
 }
+const tipoDefault = { label: 'Sin definir', avatar: 'bg-gradient-to-br from-gray-500 to-gray-600' }
 
 const emptyEdit = { name: '', email: '' }
 
@@ -81,10 +83,6 @@ function Clients() {
         </div>
       </div>
 
-      <p className="text-gray-500 text-xs flex items-center gap-1.5 mb-4">
-        <LuFolderKanban size={13} /> Los clientes se crean automáticamente al registrar un proyecto con su DNI/RUC y correo.
-      </p>
-
       {loading ? (
         <p className="text-gray-400 text-sm">Cargando clientes...</p>
       ) : clients.length === 0 ? (
@@ -94,43 +92,53 @@ function Clients() {
         </div>
       ) : (
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+          {/* Header interno de la tarjeta */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+            <div>
+              <h2 className="text-white font-semibold">Lista de clientes</h2>
+              <p className="text-gray-500 text-xs mt-0.5 flex items-center gap-1.5">
+                <LuFolderKanban size={12} /> Se crean automáticamente al registrar un proyecto con DNI/RUC y correo
+              </p>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-700 text-left">
-                  <th className="px-5 py-3 font-medium text-gray-400">Cliente</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Tipo</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Documento</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Correo (acceso al portal)</th>
-                  <th className="px-5 py-3 font-medium text-gray-400">Proyectos</th>
-                  <th className="px-5 py-3 font-medium text-gray-400"></th>
+                <tr className="text-left">
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Cliente</th>
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Correo (acceso al portal)</th>
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide">Proyectos</th>
+                  <th className="px-5 py-3 font-medium text-gray-500 text-xs uppercase tracking-wide"></th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-700/50">
                 {clients.map(c => {
-                  const tipo = tipoInfo[c.tipo] || { label: 'Sin definir', bg: 'bg-gray-500/20', text: 'text-gray-400', Icon: LuContact }
+                  const tipo = tipoInfo[c.tipo] || tipoDefault
                   const misProyectos = proyectosDe(c.id)
                   const isEditing = editingId === c.id
                   return (
-                    <tr key={c.id} className="border-b border-gray-700/60 last:border-0">
-                      <td className="px-5 py-3">
+                    <tr key={c.id} className="hover:bg-gray-700/30 transition-colors">
+                      <td className="px-5 py-4">
                         {isEditing ? (
                           <input value={editForm.name} autoFocus
                             onChange={e => setEditForm({ ...editForm, name: e.target.value })}
                             className="bg-gray-700 text-white rounded-lg px-3 py-1.5 text-sm border border-gray-600 focus:border-orange-500 outline-none w-full" />
                         ) : (
-                          <p className="text-white font-medium">{c.name}</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${tipo.avatar}`}>
+                              {getInitials(c.name)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-white font-medium truncate">{c.name}</p>
+                              <p className="text-gray-500 text-xs">
+                                {tipo.label}{c.docNumber && ` · ${c.docType} ${c.docNumber}`}
+                              </p>
+                            </div>
+                          </div>
                         )}
                       </td>
-                      <td className="px-5 py-3">
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 w-fit ${tipo.bg} ${tipo.text}`}>
-                          <tipo.Icon size={12} /> {tipo.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-gray-300 flex items-center gap-1.5">
-                        {c.docNumber ? <><LuIdCard size={13} className="text-gray-500" /> {c.docType} {c.docNumber}</> : <span className="text-gray-600">—</span>}
-                      </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-4">
                         {isEditing ? (
                           <input value={editForm.email} type="email" placeholder="correo@ejemplo.com"
                             onChange={e => setEditForm({ ...editForm, email: e.target.value })}
@@ -148,7 +156,7 @@ function Clients() {
                           <span className="text-gray-600 text-xs">Sin correo — no puede usar el portal con Google</span>
                         )}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-4">
                         {misProyectos.length === 0 ? (
                           <span className="text-gray-600 text-xs">Sin proyectos</span>
                         ) : (
@@ -159,9 +167,9 @@ function Clients() {
                           </div>
                         )}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-4 text-right">
                         {isEditing ? (
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button onClick={() => saveEdit(c.id)} disabled={saving}
                               className="flex items-center bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                               <LuCheck size={14} />
@@ -173,7 +181,7 @@ function Clients() {
                           </div>
                         ) : (
                           <button onClick={() => startEdit(c)}
-                            className="flex items-center bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-2.5 py-1.5 rounded-lg transition-colors">
+                            className="flex items-center bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-2.5 py-1.5 rounded-lg transition-colors ml-auto">
                             <LuPencil size={13} />
                           </button>
                         )}
