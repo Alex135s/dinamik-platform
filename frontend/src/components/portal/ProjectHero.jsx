@@ -24,7 +24,7 @@ function ProjectHero({ project }) {
           <LuCalendar size={13} /> Inicio: {project.startDate || '—'}
         </span>
         <span className="flex items-center gap-1.5 text-orange-50 text-xs">
-          <LuHardHat size={13} /> {project.assignedToName ? `Técnico: ${project.assignedToName}` : 'Técnico sin asignar'}
+          <LuHardHat size={13} /> {project.assignedToName ? `Ingeniero: ${project.assignedToName}` : 'Ingeniero sin asignar'}
         </span>
       </div>
     </div>

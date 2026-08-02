@@ -47,8 +47,8 @@ function ProjectTracking() {
 
   useEffect(() => {
     axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects').then(async res => {
-      // El técnico solo ve SUS proyectos asignados; el admin ve todos
-      const visibles = perms.isAdmin
+      // Admin y empleado ven todos los proyectos; ingeniero y tecnico solo los suyos
+      const visibles = perms.seesAllProjects
         ? res.data
         : res.data.filter(p => p.assignedTo === session.id)
       setProjects(visibles)

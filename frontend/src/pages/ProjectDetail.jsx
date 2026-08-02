@@ -49,7 +49,7 @@ function ProjectDetail() {
   const [project, setProject]     = useState(null)
   const [tasks, setTasks]         = useState([])
   const [documents, setDocuments] = useState([])
-  const [tecnico, setTecnico]     = useState(null)
+  const [ingeniero, setIngeniero] = useState(null)
   const [loading, setLoading]     = useState(true)
   const [notFound, setNotFound]   = useState(false)
 
@@ -71,7 +71,7 @@ function ProjectDetail() {
         setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : [])
 
         const tech = usersRes.data.find(u => u.id === found.assignedTo)
-        setTecnico(tech?.name || null)
+        setIngeniero(tech?.name || null)
 
         // Documentos del proyecto (ruta real de tu DocumentsApi)
         try {
@@ -170,11 +170,11 @@ function ProjectDetail() {
           </div>
         </div>
 
-        {/* Técnico asignado */}
+        {/* Ingeniero asignado */}
         <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-          <p className="text-gray-400 text-xs mb-2">Técnico asignado</p>
+          <p className="text-gray-400 text-xs mb-2">Ingeniero asignado</p>
           <p className="text-lg font-semibold text-blue-400 flex items-center gap-1.5">
-            {tecnico ? <><LuHardHat size={16} /> {tecnico}</> : 'Sin asignar'}
+            {ingeniero ? <><LuHardHat size={16} /> {ingeniero}</> : 'Sin asignar'}
           </p>
         </div>
 

@@ -80,7 +80,7 @@ function Projects() {
         axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/users'),
       ])
       setProjects(projRes.data)
-      setUsers(usersRes.data.filter(u => u.role === 'tecnico'))
+      setUsers(usersRes.data.filter(u => u.role === 'ingeniero'))
     } catch {
       showToast('Error al cargar los proyectos.', 'error')
     } finally {
@@ -90,7 +90,7 @@ function Projects() {
 
   useEffect(() => { fetchData() }, [])
 
-  const myProjects = perms.isAdmin
+  const myProjects = perms.seesAllProjects
     ? projects
     : projects.filter(p => p.assignedTo === session.id)
 
@@ -216,7 +216,7 @@ function Projects() {
           <h1 className="text-2xl font-bold text-white">Proyectos</h1>
           <p className="text-gray-400 text-sm mt-1">
             {filteredProjects.length} de {myProjects.length} proyectos
-            {!perms.isAdmin && <span className="text-blue-400 ml-1">(asignados a ti)</span>}
+            {!perms.seesAllProjects && <span className="text-blue-400 ml-1">(asignados a ti)</span>}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -375,11 +375,11 @@ function Projects() {
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
               {STATUS_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            {perms.isAdmin && (
+            {perms.projects.canEdit && (
               <select value={form.assignedTo}
                 onChange={e => setForm({ ...form, assignedTo: e.target.value })}
                 className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none">
-                <option value="">Sin técnico asignado</option>
+                <option value="">Sin ingeniero asignado</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             )}
@@ -467,7 +467,7 @@ function Projects() {
           {paginatedProjects.map(p => {
             const colors  = statusColors[p.status] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
             const alert   = getAlertInfo(p.endDate, p.status)
-            const tecnico = getUserName(p.assignedTo)
+            const ingeniero = getUserName(p.assignedTo)
             const ServiceIcon = serviceIcons[p.serviceType] || LuHardHat
             const AlertIcon = alert ? alertIcons[alert.tipo] : null
             return (
@@ -537,9 +537,9 @@ function Projects() {
                   </div>
                 )}
 
-                {/* Técnico */}
-                {tecnico && (
-                  <p className="text-blue-400 text-xs mt-2 flex items-center gap-1"><LuHardHat size={12} /> {tecnico}</p>
+                {/* Ingeniero asignado */}
+                {ingeniero && (
+                  <p className="text-blue-400 text-xs mt-2 flex items-center gap-1"><LuHardHat size={12} /> {ingeniero}</p>
                 )}
 
                 {/* Fechas */}
@@ -583,7 +583,7 @@ function Projects() {
           {paginatedProjects.map(p => {
             const colors  = statusColors[p.status] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
             const alert   = getAlertInfo(p.endDate, p.status)
-            const tecnico = getUserName(p.assignedTo)
+            const ingeniero = getUserName(p.assignedTo)
             const AlertIcon = alert ? alertIcons[alert.tipo] : null
             return (
               <div key={p.id}
@@ -609,7 +609,7 @@ function Projects() {
                     {p.location && <p className="text-gray-500 text-xs flex items-center gap-1"><LuMapPin size={12} /> {p.location}</p>}
                     {p.startDate && <p className="text-gray-500 text-xs flex items-center gap-1"><LuCalendar size={12} /> {p.startDate}</p>}
                     {p.endDate   && <p className="text-gray-500 text-xs flex items-center gap-1"><LuFlag size={12} /> {p.endDate}</p>}
-                    {tecnico     && <p className="text-blue-400 text-xs flex items-center gap-1"><LuHardHat size={12} /> {tecnico}</p>}
+                    {ingeniero   && <p className="text-blue-400 text-xs flex items-center gap-1"><LuHardHat size={12} /> {ingeniero}</p>}
                   </div>
                   {p.progress > 0 && (
                     <div className="mt-2 flex items-center gap-2">

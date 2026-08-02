@@ -1,16 +1,11 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
-import { LuPlus, LuRefreshCw, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban } from 'react-icons/lu'
+import { LuPlus, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
+import { ROLES, roleLabels, roleColors } from '../constants/roles'
 
-const ROLES = ['admin', 'tecnico']
 const SEDES = ['Lima', 'Ica', 'Arequipa']
-
-const roleColors = {
-  admin:   { bg: 'bg-orange-500/20', text: 'text-orange-400' },
-  tecnico: { bg: 'bg-blue-500/20',   text: 'text-blue-400'   },
-}
 
 const emptyForm = { firstName: '', lastName: '', dni: '', email: '', password: '', role: 'tecnico', sede: '' }
 
@@ -108,12 +103,10 @@ function Users() {
     }
   }
 
-  const handleChangeRole = async (id, currentRole, name) => {
-    const newRole = currentRole === 'admin' ? 'tecnico' : 'admin'
-    if (!window.confirm(`¿Cambiar rol de "${name}" a ${newRole}?`)) return
+  const handleChangeRole = async (id, newRole, name) => {
     try {
       await axios.patch(`${import.meta.env.VITE_PROJECTS_API}/api/users/${id}/role`, { role: newRole })
-      showToast(`Rol de "${name}" cambiado a ${newRole}.`, 'success')
+      showToast(`Rol de "${name}" cambiado a ${roleLabels[newRole] || newRole}.`, 'success')
       fetchUsers()
     } catch {
       showToast('Error al cambiar el rol.', 'error')
@@ -274,29 +267,30 @@ function Users() {
 
                   {/* Acciones */}
                   <div className="flex items-center gap-2">
-                    <span className={`${colors.bg} ${colors.text} text-xs px-3 py-1 rounded-full font-medium`}>
-                      {u.role}
-                    </span>
+                    {isMe ? (
+                      <span className={`${colors.bg} ${colors.text} text-xs px-3 py-1 rounded-full font-medium`}>
+                        {roleLabels[u.role] || u.role}
+                      </span>
+                    ) : (
+                      <select value={u.role}
+                        onChange={e => handleChangeRole(u.id, e.target.value, u.name)}
+                        className={`text-xs font-medium pl-3 pr-2 py-1.5 rounded-full border-0 outline-none cursor-pointer ${colors.bg} ${colors.text}`}>
+                        {ROLES.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
+                      </select>
+                    )}
                     {!isMe && (
-                      <>
-                        <button
-                          onClick={() => handleChangeRole(u.id, u.role, u.name)}
-                          className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-                          <LuRefreshCw size={13} /> Cambiar Rol
-                        </button>
-                        <button
-                          onClick={() => handleDelete(u.id, u.name)}
-                          disabled={deletingId === u.id}
-                          className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                          {deletingId === u.id ? '...' : <LuTrash2 size={13} />}
-                        </button>
-                      </>
+                      <button
+                        onClick={() => handleDelete(u.id, u.name)}
+                        disabled={deletingId === u.id}
+                        className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                        {deletingId === u.id ? '...' : <LuTrash2 size={13} />}
+                      </button>
                     )}
                   </div>
                 </div>
 
-                {/* Proyectos asociados */}
-                {u.role === 'tecnico' && (
+                {/* Proyectos asociados (los ingenieros quedan asignados a nivel de proyecto) */}
+                {u.role === 'ingeniero' && (
                   <div className="mt-3 pt-3 border-t border-gray-700/60 flex items-center gap-2 flex-wrap">
                     <span className="text-gray-500 text-xs flex items-center gap-1 flex-shrink-0">
                       <LuFolderKanban size={12} /> Proyectos:

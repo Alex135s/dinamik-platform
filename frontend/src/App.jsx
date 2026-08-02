@@ -91,12 +91,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/projects" element={<Projects />} />
-                <Route path="/documents" element={
-                  
-                  user.role === 'admin' || user.role === 'tecnico'
-                    ? <Documents />
-                    : <Navigate to="/" />
-                } />
+                <Route path="/documents" element={<Documents />} />
                 <Route path="/users" element={
 
                   user.role === 'admin'
@@ -104,7 +99,7 @@ function App() {
                     : <Navigate to="/" />
                 } />
                 <Route path="/clients" element={
-                  user.role === 'admin'
+                  user.role === 'admin' || user.role === 'empleado'
                     ? <Clients />
                     : <Navigate to="/" />
                 } />

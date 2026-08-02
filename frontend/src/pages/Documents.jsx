@@ -66,7 +66,7 @@ function Documents() {
   useEffect(() => { fetchData() }, [])
 
   // Filtrar proyectos según rol
-  const myProjects = perms.isAdmin
+  const myProjects = perms.seesAllProjects
     ? projects
     : projects.filter(p => p.assignedTo === session.id)
 

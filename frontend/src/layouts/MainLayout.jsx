@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LuLayoutDashboard, LuHardHat, LuFolder, LuImage, LuTrendingUp, LuUsers, LuContact, LuSettings, LuMenu } from 'react-icons/lu'
+import { LuLayoutDashboard, LuHardHat, LuFolder, LuImage, LuTrendingUp, LuUsers, LuContact, LuSettings, LuMenu, LuBriefcase } from 'react-icons/lu'
 import ChatbotAdmin from '../components/ChatbotAdmin'
 import { useSettings } from '../context/SettingsContext'
+import { roleLabels } from '../constants/roles'
 
 const navItems = [
   { path: '/',          label: 'dashboard',  Icon: LuLayoutDashboard },
@@ -25,9 +26,8 @@ function MainLayout({ children, user, onLogout }) {
 
   const visibleItems = navItems
     .filter(item => item.path !== '/users'           || user?.role === 'admin')
-    .filter(item => item.path !== '/clients'         || user?.role === 'admin')
+    .filter(item => item.path !== '/clients'         || user?.role === 'admin' || user?.role === 'empleado')
     .filter(item => item.path !== '/portfolio-admin' || user?.role === 'admin')
-    .filter(item => item.path !== '/tracking'        || user?.role === 'admin' || user?.role === 'tecnico')
 
   return (
     <div className="flex min-h-screen bg-gray-950">
@@ -74,13 +74,13 @@ function MainLayout({ children, user, onLogout }) {
             </div>
             <div>
               <p className="text-white text-xs font-medium">{user?.name}</p>
-              <p className="text-gray-500 text-xs capitalize">{user?.role}</p>
+              <p className="text-gray-500 text-xs">{roleLabels[user?.role] || user?.role}</p>
             </div>
           </div>
-          {user?.role === 'tecnico' && (
+          {user?.role && user.role !== 'admin' && (
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-1.5 mb-2">
               <p className="text-blue-400 text-xs text-center flex items-center justify-center gap-1.5">
-                <LuHardHat size={13} /> Modo Técnico
+                <LuBriefcase size={13} /> Modo {roleLabels[user.role] || user.role}
               </p>
             </div>
           )}
