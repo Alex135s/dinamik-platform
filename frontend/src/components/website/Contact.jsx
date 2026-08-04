@@ -5,7 +5,6 @@ function Contact({ onWhatsapp }) {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
 
   return (
-    <>
       <section id="contacto" className="py-16 sm:py-24 bg-gray-950">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -94,11 +93,6 @@ function Contact({ onWhatsapp }) {
           </div>
         </div>
       </section>
-
-      <footer className="bg-black py-8 text-center">
-        <p className="text-gray-500 text-sm">© 2026 DINAMIK DK GROUP SAC · Ingeniería que construye confianza</p>
-      </footer>
-    </>
   )
 }
 

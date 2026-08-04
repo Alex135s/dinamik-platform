@@ -3,14 +3,24 @@ import { LuX, LuMessageCircle, LuBot, LuTrash2, LuSend } from 'react-icons/lu'
 
 const CHAT_API = '' + import.meta.env.VITE_PROJECTS_API + ''
 
-const QUICK_QUESTIONS = [
+const DEFAULT_QUICK_QUESTIONS = [
   '¿Cómo va mi proyecto?',
   '¿Qué documentos tengo?',
   '¿Cuándo termina mi proyecto?',
   '¿Cómo los contacto?',
 ]
 
-function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }) {
+const DEFAULT_WELCOME_LINES = [
+  'Tu asistente virtual de DINAMIK.',
+  'Puedo ayudarte con tu proyecto, documentos y más.',
+]
+
+function Chatbot({
+  placeholder = '¿En qué puedo ayudarte?',
+  isPortal = false,
+  quickQuestions = DEFAULT_QUICK_QUESTIONS,
+  welcomeLines = DEFAULT_WELCOME_LINES,
+}) {
   const [open, setOpen]         = useState(false)
   const [messages, setMessages] = useState([])
   const [input, setInput]       = useState('')
@@ -110,14 +120,15 @@ function Chatbot({ placeholder = '¿En qué puedo ayudarte?', isPortal = false }
                 </div>
                 <p className="text-white font-semibold text-sm">¡Hola! Soy DINA 👋</p>
                 <p className="text-gray-400 text-xs mt-1 leading-relaxed">
-                  Tu asistente virtual de DINAMIK.<br/>
-                  Puedo ayudarte con tu proyecto, documentos y más.
+                  {welcomeLines.map((line, i) => (
+                    <span key={i}>{line}{i < welcomeLines.length - 1 && <br/>}</span>
+                  ))}
                 </p>
 
                 {/* Preguntas rápidas */}
                 {isPortal && (
                   <div className="mt-4 grid grid-cols-2 gap-2">
-                    {QUICK_QUESTIONS.map((q, i) => (
+                    {quickQuestions.map((q, i) => (
                       <button key={i}
                         onClick={() => sendMessage(q)}
                         className="bg-gray-800 hover:bg-orange-500/20 hover:border-orange-500 text-gray-300 hover:text-orange-400 text-xs px-3 py-2 rounded-xl border border-gray-700 transition-all text-left leading-snug">

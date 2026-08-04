@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { FaWhatsapp } from 'react-icons/fa'
 import { LuMenu, LuX } from 'react-icons/lu'
@@ -13,13 +13,21 @@ const NAV_LINKS = [
 
 function WebNavbar({ onWhatsapp }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
-    <nav className="fixed top-0 w-full bg-white shadow-md z-50">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link to="/web" className="text-2xl font-black text-gray-900">
-          DIN<span className="text-orange-500">A</span>MIK
+    <nav className={`fixed top-0 w-full z-50 bg-white transition-shadow ${scrolled ? 'shadow-md' : 'shadow-sm'}`}>
+      <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+        <Link to="/web" className="flex items-center" onClick={() => setMenuOpen(false)}>
+          <img src="/logo-light.png" alt="DINAMIK" className="h-9 w-auto" />
         </Link>
 
         {/* Desktop */}
@@ -37,7 +45,7 @@ function WebNavbar({ onWhatsapp }) {
             </Link>
           ))}
           <button onClick={onWhatsapp}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
             <FaWhatsapp /> Contáctanos
           </button>
         </div>
