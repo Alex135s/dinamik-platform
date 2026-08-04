@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /web
+Allow: /web/nosotros
+Allow: /web/portafolio
+Allow: /web/servicios
+Allow: /web/contacto
+Disallow: /portal
+Disallow: /login
+Disallow: /dashboard
+Disallow: /projects
+Disallow: /documents
+Disallow: /users
+Disallow: /clients
+Disallow: /tasks
+Disallow: /tracking
+Disallow: /portfolio-admin
+Disallow: /settings
+
+Sitemap: https://dinamik-platform.vercel.app/sitemap.xml

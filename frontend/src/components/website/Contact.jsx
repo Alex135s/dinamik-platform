@@ -1,8 +1,23 @@
 import { useState } from 'react'
 import { FaWhatsapp, FaMapMarkerAlt, FaPhone, FaEnvelope, FaLinkedin, FaInstagram, FaFacebook, FaTiktok } from 'react-icons/fa'
 
+const ADDRESS = 'Av. República de Chile Nro 478, Jesús María, Lima'
+
 function Contact({ onWhatsapp }) {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [error, setError] = useState('')
+
+  const sendForm = () => {
+    if (!form.name.trim() || !form.message.trim()) {
+      setError('Completa al menos tu nombre y tu mensaje.')
+      return
+    }
+    setError('')
+    const text = `Hola, soy ${form.name}.` +
+      (form.email.trim() ? ` Mi correo es ${form.email}.` : '') +
+      ` ${form.message}`
+    window.open(`https://wa.me/51962744341?text=${encodeURIComponent(text)}`, '_blank')
+  }
 
   return (
       <section id="contacto" className="py-16 sm:py-24 bg-gray-950">
@@ -20,7 +35,7 @@ function Contact({ onWhatsapp }) {
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs">Dirección</p>
-                  <p className="text-white text-sm font-medium mt-1">Av. República de Chile Nro 478, Jesús María, Lima</p>
+                  <p className="text-white text-sm font-medium mt-1">{ADDRESS}</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -66,7 +81,7 @@ function Contact({ onWhatsapp }) {
               <div className="rounded-2xl overflow-hidden border border-gray-800">
                 <iframe
                   title="DINAMIK ubicación"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3901.5!2d-77.0428!3d-12.0734!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9105c8b5b5b5b5b5%3A0x1!2sAv.+Rep%C3%BAblica+de+Chile+478%2C+Jes%C3%BAs+Mar%C3%ADa+15072!5e0!3m2!1ses!2spe!4v1"
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(ADDRESS)}&output=embed`}
                   width="100%"
                   height="200"
                   style={{ border: 0 }}
@@ -85,10 +100,12 @@ function Contact({ onWhatsapp }) {
               <textarea placeholder="Cuéntanos tu proyecto..." rows={4}
                 value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
                 className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 text-sm border border-gray-700 focus:border-orange-500 focus:outline-none resize-none" />
-              <button onClick={onWhatsapp}
+              {error && <p className="text-red-400 text-xs">{error}</p>}
+              <button onClick={sendForm}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-medium">
                 Enviar mensaje
               </button>
+              <p className="text-gray-500 text-xs text-center">Se abrirá WhatsApp con tu mensaje ya redactado.</p>
             </div>
           </div>
         </div>

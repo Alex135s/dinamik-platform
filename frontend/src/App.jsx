@@ -1,26 +1,40 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import MainLayout from './layouts/MainLayout'
-import Dashboard from './pages/Dashboard'
-import Projects from './pages/Projects'
-import Documents from './pages/Documents'
-import Users from './pages/Users'
-import Clients from './pages/Clients'
-import Tasks from './pages/Tasks'
-import ProjectTracking from './pages/ProjectTracking'
-import ProjectDetail from './pages/ProjectDetail'
-import PortfolioAdmin from './pages/PortfolioAdmin'
-import ClientPortal from './pages/ClientPortal'
+// Rutas del panel admin / portal de clientes: se cargan bajo demanda para que
+// la web pública (el punto de entrada más visitado) no descargue su peso.
+const MainLayout       = lazy(() => import('./layouts/MainLayout'))
+const Dashboard        = lazy(() => import('./pages/Dashboard'))
+const Projects         = lazy(() => import('./pages/Projects'))
+const Documents        = lazy(() => import('./pages/Documents'))
+const Users            = lazy(() => import('./pages/Users'))
+const Clients          = lazy(() => import('./pages/Clients'))
+const Tasks            = lazy(() => import('./pages/Tasks'))
+const ProjectTracking  = lazy(() => import('./pages/ProjectTracking'))
+const ProjectDetail    = lazy(() => import('./pages/ProjectDetail'))
+const PortfolioAdmin   = lazy(() => import('./pages/PortfolioAdmin'))
+const ClientPortal     = lazy(() => import('./pages/ClientPortal'))
+const Login            = lazy(() => import('./pages/Login'))
+const Settings         = lazy(() => import('./pages/Settings'))
+
 import Website from './pages/Website'
 import WebNosotros from './pages/WEB/WebNosotros'
 import WebPortafolio from './pages/WEB/WebPortafolio'
 import WebServicios from './pages/WEB/WebServicios'
 import WebContacto from './pages/WEB/WebContacto'
 import WebLayout from './layouts/WebLayout'
-import Login from './pages/Login'
 import { ToastProvider } from './context/ToastContext'
 import { SettingsProvider } from './context/SettingsContext'
-import Settings from './pages/Settings'
+
+function RouteLoading() {
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="text-center">
+        <img src="/logo-dark.png" alt="DINAMIK" className="w-56 mx-auto mb-4" />
+        <p className="text-gray-400 text-sm animate-pulse">Cargando...</p>
+      </div>
+    </div>
+  )
+}
 function App() {
   const [user, setUser] = useState(null)
   const [checking, setChecking] = useState(true)
@@ -73,6 +87,7 @@ function App() {
     <SettingsProvider>
     <ToastProvider>
     <BrowserRouter>
+      <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/portal" element={<ClientPortal />} />
         <Route path="/web" element={<WebLayout />}>
@@ -121,6 +136,7 @@ function App() {
           )
         } />
       </Routes>
+      </Suspense>
     </BrowserRouter>
     </ToastProvider>
     </SettingsProvider>
