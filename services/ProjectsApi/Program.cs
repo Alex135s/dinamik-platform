@@ -1062,7 +1062,7 @@ REGLAS:
 
     var payload = new
     {
-        model = "llama-3.3-70b-versatile",
+        model = "openai/gpt-oss-120b",
         max_tokens = 600,
         temperature = 0.75,
         messages = mensajes
