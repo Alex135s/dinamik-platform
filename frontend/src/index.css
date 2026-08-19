@@ -15,10 +15,19 @@
 .light-mode .bg-gray-800 { background-color: #f1f5f9 !important; }
 .light-mode .bg-gray-700 { background-color: #e2e8f0 !important; }
 .light-mode .text-white    { color: #0f172a !important; }
+.light-mode .text-gray-300 { color: #475569 !important; }
 .light-mode .text-gray-400 { color: #64748b !important; }
 .light-mode .text-gray-500 { color: #94a3b8 !important; }
 .light-mode .border-gray-700 { border-color: #e2e8f0 !important; }
 .light-mode .border-gray-800 { border-color: #e2e8f0 !important; }
+
+/* Textos de acento (badges de estado, iconos, enlaces): las tonalidades -400
+   están pensadas para fondo oscuro y pierden contraste sobre fondo claro. */
+.light-mode .text-orange-400 { color: #ea580c !important; }
+.light-mode .text-green-400  { color: #16a34a !important; }
+.light-mode .text-yellow-400 { color: #ca8a04 !important; }
+.light-mode .text-blue-400   { color: #2563eb !important; }
+.light-mode .text-red-400    { color: #dc2626 !important; }
 .light-mode aside { background-color: #1e293b !important; border-color: #334155 !important; }
 .light-mode aside .text-white    { color: #ffffff !important; }
 .light-mode aside .text-gray-400 { color: #94a3b8 !important; }
@@ -27,3 +36,4 @@
 .light-mode aside .bg-gray-900   { background-color: #1e293b !important; }
 .light-mode aside .border-gray-800 { border-color: #334155 !important; }
 .light-mode aside .hover\:bg-gray-800:hover { background-color: #334155 !important; }
+.light-mode aside .text-blue-400 { color: #60a5fa !important; }

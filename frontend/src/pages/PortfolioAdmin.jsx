@@ -295,7 +295,7 @@ function PortfolioAdmin() {
                 <span key={i} className="flex items-center gap-2 bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-full">
                   <LuImages size={12} /> {f.name.length > 22 ? f.name.slice(0, 22) + '…' : f.name}
                   {!uploading && (
-                    <button onClick={() => quitarArchivo(i)} className="text-gray-400 hover:text-red-400"><LuX size={12} /></button>
+                    <button onClick={() => quitarArchivo(i)} aria-label={`Quitar ${f.name}`} className="text-gray-400 hover:text-red-400"><LuX size={12} /></button>
                   )}
                 </span>
               ))}
@@ -401,10 +401,11 @@ function PortfolioAdmin() {
                       <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => togglePhoto(p.id, p.enabled)}
                           title={p.enabled ? 'Ocultar foto' : 'Mostrar foto'}
+                          aria-label={p.enabled ? 'Ocultar foto' : 'Mostrar foto'}
                           className="bg-black/60 hover:bg-black/80 text-white text-xs w-7 h-7 rounded-md flex items-center justify-center">
                           {p.enabled ? <LuEye size={14} /> : <LuBan size={14} />}
                         </button>
-                        <button onClick={() => deletePhoto(p.id)} title="Borrar foto"
+                        <button onClick={() => deletePhoto(p.id)} title="Borrar foto" aria-label="Borrar foto"
                           className="bg-black/60 hover:bg-red-500/80 text-white text-xs w-7 h-7 rounded-md flex items-center justify-center">
                           <LuTrash2 size={14} />
                         </button>

@@ -300,7 +300,7 @@ function ClientPortal() {
               <p className="text-gray-400 text-[10px] font-mono">{project.projectCode}</p>
             </div>
           </div>
-          <button onClick={handleLogout} title="Cerrar sesión"
+          <button onClick={handleLogout} title="Cerrar sesión" aria-label="Cerrar sesión"
             className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
             <LuLogOut size={17} />
           </button>
@@ -364,7 +364,7 @@ function ClientPortal() {
             onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
               <p className="text-gray-900 font-semibold">{previewImg.name}</p>
-              <button onClick={() => setPreviewImg(null)}
+              <button onClick={() => setPreviewImg(null)} aria-label="Cerrar vista previa"
                 className="text-gray-400 hover:text-gray-900 px-2"><LuX size={20} /></button>
             </div>
             <img src={previewImg.fileUrl} alt={previewImg.name}

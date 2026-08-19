@@ -5,9 +5,11 @@ import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 import { usePermissions } from '../hooks/usePermissions'
 import LoadingState from '../components/LoadingState'
+import { exportTasksPDF, exportTasksExcel } from '../utils/exportUtils'
 import {
   LuArrowLeft, LuClipboardList, LuHourglass, LuRefreshCw, LuCircleCheckBig, LuPlus,
   LuPencil, LuHardHat, LuCircleAlert, LuTrash2, LuCircle, LuCalendar,
+  LuFileText, LuFileSpreadsheet,
 } from 'react-icons/lu'
 
 const STATUS_TASK = ['pendiente', 'en_progreso', 'completado']
@@ -220,12 +222,22 @@ function Tasks() {
             </button>
           ))}
         </div>
-        {perms.tasks.canCreate && (
-          <button onClick={openNew}
-            className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-            <LuPlus size={15} /> Nueva Tarea
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportTasksPDF(tasks, project?.name || 'Proyecto')} disabled={tasks.length === 0}
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuFileText size={15} /> PDF
           </button>
-        )}
+          <button onClick={() => exportTasksExcel(tasks, project?.name || 'Proyecto')} disabled={tasks.length === 0}
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuFileSpreadsheet size={15} /> Excel
+          </button>
+          {perms.tasks.canCreate && (
+            <button onClick={openNew}
+              className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+              <LuPlus size={15} /> Nueva Tarea
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Formulario crear/editar */}
@@ -340,13 +352,14 @@ function Tasks() {
                       {STATUS_TASK.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     {perms.tasks.canCreate && (
-                      <button onClick={() => openEdit(t)}
+                      <button onClick={() => openEdit(t)} aria-label={`Editar tarea ${t.title}`}
                         className="flex items-center bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
                         <LuPencil size={13} />
                       </button>
                     )}
                     {perms.tasks.canDelete && (
                       <button onClick={() => handleDelete(t.id, t.title)} disabled={deletingId === t.id}
+                        aria-label={`Eliminar tarea ${t.title}`}
                         className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                         {deletingId === t.id ? '...' : <LuTrash2 size={13} />}
                       </button>

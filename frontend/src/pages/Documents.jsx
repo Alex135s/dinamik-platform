@@ -502,6 +502,7 @@ function Documents() {
                         )}
                         {perms.documents.canDelete && (
                           <button onClick={() => handleDelete(d.id, d.name)} disabled={deletingId === d.id}
+                            aria-label={`Eliminar documento ${d.name}`}
                             className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                             {deletingId === d.id ? '...' : <LuTrash2 size={13} />}
                           </button>
@@ -527,7 +528,7 @@ function Documents() {
             onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
               <p className="text-white font-semibold">{previewDoc.name}</p>
-              <button onClick={() => setPreviewDoc(null)}
+              <button onClick={() => setPreviewDoc(null)} aria-label="Cerrar vista previa"
                 className="text-gray-400 hover:text-white px-2"><LuX size={20} /></button>
             </div>
             <img src={previewDoc.fileUrl} alt={previewDoc.name}

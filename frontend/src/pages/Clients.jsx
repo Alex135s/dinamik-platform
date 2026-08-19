@@ -4,7 +4,8 @@ import { useToast } from '../context/ToastContext'
 import { getInitials } from '../components/portal/portalData'
 import LoadingState from '../components/LoadingState'
 import Pagination from '../components/Pagination'
-import { LuContact, LuMail, LuFolderKanban, LuPencil, LuCheck, LuX, LuSearch } from 'react-icons/lu'
+import { exportClientsPDF, exportClientsExcel } from '../utils/exportUtils'
+import { LuContact, LuMail, LuFolderKanban, LuPencil, LuCheck, LuX, LuSearch, LuFileText, LuFileSpreadsheet } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
 
 const tipoInfo = {
@@ -92,6 +93,16 @@ function Clients() {
         <div>
           <h1 className="text-2xl font-bold text-white">Clientes</h1>
           <p className="text-gray-400 text-sm mt-1">{clients.length} clientes registrados</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportClientsPDF(clients, projects)} disabled={clients.length === 0}
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuFileText size={15} /> PDF
+          </button>
+          <button onClick={() => exportClientsExcel(clients, projects)} disabled={clients.length === 0}
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuFileSpreadsheet size={15} /> Excel
+          </button>
         </div>
       </div>
 
@@ -199,17 +210,17 @@ function Clients() {
                       <td className="px-5 py-4 text-right">
                         {isEditing ? (
                           <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => saveEdit(c.id)} disabled={saving}
+                            <button onClick={() => saveEdit(c.id)} disabled={saving} aria-label="Guardar cambios"
                               className="flex items-center bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                               <LuCheck size={14} />
                             </button>
-                            <button onClick={cancelEdit}
+                            <button onClick={cancelEdit} aria-label="Cancelar edición"
                               className="flex items-center bg-gray-700 hover:bg-gray-600 text-gray-400 text-xs px-2.5 py-1.5 rounded-lg transition-colors">
                               <LuX size={14} />
                             </button>
                           </div>
                         ) : (
-                          <button onClick={() => startEdit(c)}
+                          <button onClick={() => startEdit(c)} aria-label={`Editar cliente ${c.name}`}
                             className="flex items-center bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-2.5 py-1.5 rounded-lg transition-colors ml-auto">
                             <LuPencil size={13} />
                           </button>

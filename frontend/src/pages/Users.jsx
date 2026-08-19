@@ -4,7 +4,8 @@ import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 import LoadingState from '../components/LoadingState'
 import Pagination from '../components/Pagination'
-import { LuPlus, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban, LuSearch } from 'react-icons/lu'
+import { exportUsersPDF, exportUsersExcel } from '../utils/exportUtils'
+import { LuPlus, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban, LuSearch, LuFileText, LuFileSpreadsheet } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
 import { ROLES, roleLabels, roleColors } from '../constants/roles'
 
@@ -161,11 +162,21 @@ function Users() {
           <h1 className="text-2xl font-bold text-white">Usuarios</h1>
           <p className="text-gray-400 text-sm mt-1">{users.length} usuarios registrados</p>
         </div>
-        <button
-          onClick={() => { setForm(emptyForm); setShowForm(!showForm) }}
-          className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          <LuPlus size={15} /> Nuevo Usuario
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportUsersPDF(users)} disabled={users.length === 0}
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuFileText size={15} /> PDF
+          </button>
+          <button onClick={() => exportUsersExcel(users)} disabled={users.length === 0}
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuFileSpreadsheet size={15} /> Excel
+          </button>
+          <button
+            onClick={() => { setForm(emptyForm); setShowForm(!showForm) }}
+            className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <LuPlus size={15} /> Nuevo Usuario
+          </button>
+        </div>
       </div>
 
       {/* Formulario */}
@@ -308,7 +319,7 @@ function Users() {
                         {roleLabels[u.role] || u.role}
                       </span>
                     ) : (
-                      <select value={u.role}
+                      <select value={u.role} aria-label={`Rol de ${u.name}`}
                         onChange={e => handleChangeRole(u.id, e.target.value, u.name)}
                         className={`text-xs font-medium pl-3 pr-2 py-1.5 rounded-full border-0 outline-none cursor-pointer ${colors.bg} ${colors.text}`}>
                         {ROLES.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
@@ -318,6 +329,7 @@ function Users() {
                       <button
                         onClick={() => handleDelete(u.id, u.name)}
                         disabled={deletingId === u.id}
+                        aria-label={`Eliminar usuario ${u.name}`}
                         className="flex items-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                         {deletingId === u.id ? '...' : <LuTrash2 size={13} />}
                       </button>

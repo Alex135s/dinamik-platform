@@ -6,7 +6,7 @@ import LoadingState from '../components/LoadingState'
 import { exportProjectsPDF, exportProjectsExcel } from '../utils/exportUtils'
 import Pagination from '../components/Pagination'
 import { usePermissions } from '../hooks/usePermissions'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   LuLayoutGrid, LuList, LuFileText, LuFileSpreadsheet, LuPlus, LuX, LuSearch,
   LuPencil, LuTrash2, LuMapPin, LuGlobe, LuLightbulb, LuHardHat, LuCuboid, LuMap,
@@ -57,6 +57,7 @@ function Projects() {
   const confirm = useConfirm()
   const perms          = usePermissions()
   const navigate       = useNavigate()
+  const location       = useLocation()
   const session        = JSON.parse(localStorage.getItem('dinamik_session') || '{}')
 
   const [projects, setProjects]       = useState([])
@@ -124,6 +125,7 @@ function Projects() {
   const getUserName = (id) => users.find(u => u.id === id)?.name || null
 
   const openNew = () => { setEditingId(null); setForm(emptyForm); setShowForm(true) }
+
   const openEdit = (p) => {
     setEditingId(p.id)
     setForm({
@@ -138,6 +140,17 @@ function Projects() {
     })
     setShowForm(true)
   }
+
+  // Si venimos de "Editar" en el Detalle del proyecto, abrir el formulario directamente
+  useEffect(() => {
+    const editId = location.state?.editProjectId
+    if (!editId || projects.length === 0) return
+    const target = projects.find(p => p.id === editId)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (target) openEdit(target)
+    navigate(location.pathname, { replace: true, state: null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, location.state])
 
   const handleSearchDoc = async () => {
     const number = form.clientDocNumber.trim()
@@ -574,6 +587,7 @@ function Projects() {
                   )}
                   {perms.projects.canDelete && (
                     <button onClick={() => handleDelete(p.id, p.name)} disabled={deletingId === p.id}
+                      aria-label={`Eliminar proyecto ${p.name}`}
                       className="flex items-center justify-center bg-gray-700 hover:bg-red-500/20 hover:text-red-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
                       {deletingId === p.id ? '...' : <LuTrash2 size={13} />}
                     </button>

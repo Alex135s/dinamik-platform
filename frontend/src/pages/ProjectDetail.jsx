@@ -6,8 +6,10 @@ import ShareProjectCode from '../components/ShareProjectCode'
 import {
   LuSearch, LuHardHat, LuCuboid, LuMap, LuClipboardCheck, LuBuilding2, LuCircleCheckBig,
   LuCircleAlert, LuFlag, LuCalendar, LuClipboardList, LuFolder, LuFileText, LuPencilRuler,
-  LuPaperclip, LuDownload, LuArrowLeft, LuMapPin, LuX,
+  LuPaperclip, LuDownload, LuArrowLeft, LuMapPin, LuX, LuPencil,
 } from 'react-icons/lu'
+import { usePermissions } from '../hooks/usePermissions'
+import LoadingState from '../components/LoadingState'
 
 const API = '' + import.meta.env.VITE_PROJECTS_API + ''        // ProjectsApi
 const DOCS_API = '' + import.meta.env.VITE_DOCUMENTS_API + ''    // DocumentsApi
@@ -45,6 +47,7 @@ function ProjectDetail() {
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const perms = usePermissions()
 
   const [project, setProject]     = useState(null)
   const [tasks, setTasks]         = useState([])
@@ -104,7 +107,7 @@ function ProjectDetail() {
 
   // ── Estados de carga / error ────────────────────────
   if (loading) {
-    return <p className="text-gray-400 text-sm">Cargando detalle del proyecto...</p>
+    return <LoadingState label="Cargando detalle del proyecto..." />
   }
 
   if (notFound || !project) {
@@ -149,9 +152,18 @@ function ProjectDetail() {
               </p>
             </div>
           </div>
-          <span className={`text-xs px-3 py-1 rounded-full font-medium ${colors.bg} ${colors.text}`}>
-            {project.status}
-          </span>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span className={`text-xs px-3 py-1 rounded-full font-medium ${colors.bg} ${colors.text}`}>
+              {project.status}
+            </span>
+            {perms.projects.canEdit && (
+              <button
+                onClick={() => navigate('/projects', { state: { editProjectId: project.id } })}
+                className="flex items-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                <LuPencil size={13} /> Editar
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
