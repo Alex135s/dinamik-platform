@@ -3,8 +3,10 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import { useConfirm } from '../context/ConfirmContext'
 import { exportDocumentsPDF, exportDocumentsExcel } from '../utils/exportUtils'
 import PDFPreview from '../components/PDFPreview'
+import LoadingState from '../components/LoadingState'
 import { usePermissions } from '../hooks/usePermissions'
 import {
   LuFileText, LuFileSpreadsheet, LuSearch, LuFolder, LuPencilRuler, LuCuboid, LuCamera,
@@ -36,11 +38,13 @@ const statusColors = {
 
 function Documents() {
   const { showToast } = useToast()
+  const confirm        = useConfirm()
   const perms         = usePermissions()
   const session       = JSON.parse(localStorage.getItem('dinamik_session') || '{}')
 
   const [projects, setProjects]         = useState([])
   const [docs, setDocs]                 = useState([])
+  const [loading, setLoading]           = useState(true)
   const [selectedProject, setSelectedProject] = useState(null)
   const [showForm, setShowForm]         = useState(false)
   const [form, setForm]                 = useState({ name: '', projectId: '', type: 'plano_pdf' })
@@ -55,12 +59,18 @@ function Documents() {
   const [photoStat, setPhotoStat]       = useState({ done: 0, total: 0 })
 
   const fetchData = async () => {
-    const [p, d] = await Promise.all([
-      axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects'),
-      axios.get('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents')
-    ])
-    setProjects(p.data)
-    setDocs(d.data)
+    setLoading(true)
+    try {
+      const [p, d] = await Promise.all([
+        axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects'),
+        axios.get('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents')
+      ])
+      setProjects(p.data)
+      setDocs(d.data)
+    } catch {
+      showToast('Error al cargar documentos.', 'error')
+    }
+    setLoading(false)
   }
 
   useEffect(() => { fetchData() }, [])
@@ -163,7 +173,10 @@ function Documents() {
   }
 
   const handleDelete = async (id, name) => {
-    if (!confirm(`¿Eliminar "${name}"?`)) return
+    const ok = await confirm(`Esta acción eliminará el documento "${name}" de forma permanente.`, {
+      title: 'Eliminar documento', confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
     setDeletingId(id)
     try {
       await axios.delete(`${import.meta.env.VITE_DOCUMENTS_API}/api/documents/${id}`)
@@ -222,7 +235,9 @@ function Documents() {
         </div>
 
         {/* Grid de proyectos */}
-        {filteredProjects.length === 0 ? (
+        {loading ? (
+          <LoadingState label="Cargando documentos..." />
+        ) : filteredProjects.length === 0 ? (
           <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
             <div className="flex justify-center mb-3 text-gray-500"><LuFolder size={40} /></div>
             <p className="text-gray-400 text-sm">No hay proyectos disponibles.</p>

@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
 import { getInitials } from '../components/portal/portalData'
-import { LuContact, LuMail, LuFolderKanban, LuPencil, LuCheck, LuX } from 'react-icons/lu'
+import LoadingState from '../components/LoadingState'
+import Pagination from '../components/Pagination'
+import { LuContact, LuMail, LuFolderKanban, LuPencil, LuCheck, LuX, LuSearch } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
 
 const tipoInfo = {
@@ -12,6 +14,7 @@ const tipoInfo = {
 const tipoDefault = { label: 'Sin definir', avatar: 'bg-gradient-to-br from-gray-500 to-gray-600' }
 
 const emptyEdit = { name: '', email: '' }
+const PAGE_SIZE = 10
 
 function Clients() {
   const { showToast } = useToast()
@@ -21,6 +24,8 @@ function Clients() {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm]   = useState(emptyEdit)
   const [saving, setSaving]       = useState(false)
+  const [search, setSearch]       = useState('')
+  const [page, setPage]           = useState(1)
 
   const fetchData = async () => {
     try {
@@ -44,6 +49,13 @@ function Clients() {
   }, [])
 
   const proyectosDe = (clientId) => projects.filter(p => p.clientId === clientId)
+
+  const filteredClients = clients.filter(c =>
+    c.name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.email?.toLowerCase().includes(search.toLowerCase()) ||
+    c.docNumber?.toLowerCase().includes(search.toLowerCase())
+  )
+  const pagedClients = filteredClients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const startEdit = (c) => {
     setEditingId(c.id)
@@ -83,12 +95,29 @@ function Clients() {
         </div>
       </div>
 
+      {/* Buscador */}
+      {!loading && clients.length > 0 && (
+        <div className="relative mb-4">
+          <LuSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            placeholder="Buscar por nombre, correo o documento..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
+            className="w-full bg-gray-800 text-white rounded-xl pl-9 pr-4 py-2.5 text-sm border border-gray-700 focus:border-orange-500 outline-none"
+          />
+        </div>
+      )}
+
       {loading ? (
-        <p className="text-gray-400 text-sm">Cargando clientes...</p>
+        <LoadingState label="Cargando clientes..." />
       ) : clients.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
           <div className="flex justify-center mb-3 text-gray-500"><LuContact size={40} /></div>
           <p className="text-gray-400 text-sm">No hay clientes registrados aún.</p>
+        </div>
+      ) : filteredClients.length === 0 ? (
+        <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
+          <p className="text-gray-400 text-sm">No se encontraron clientes.</p>
         </div>
       ) : (
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
@@ -113,7 +142,7 @@ function Clients() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700/50">
-                {clients.map(c => {
+                {pagedClients.map(c => {
                   const tipo = tipoInfo[c.tipo] || tipoDefault
                   const misProyectos = proyectosDe(c.id)
                   const isEditing = editingId === c.id
@@ -193,6 +222,15 @@ function Clients() {
             </table>
           </div>
         </div>
+      )}
+
+      {!loading && filteredClients.length > 0 && (
+        <Pagination
+          totalItems={filteredClients.length}
+          itemsPerPage={PAGE_SIZE}
+          currentPage={page}
+          onPageChange={setPage}
+        />
       )}
     </div>
   )

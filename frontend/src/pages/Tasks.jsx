@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import { useConfirm } from '../context/ConfirmContext'
 import { usePermissions } from '../hooks/usePermissions'
+import LoadingState from '../components/LoadingState'
 import {
   LuArrowLeft, LuClipboardList, LuHourglass, LuRefreshCw, LuCircleCheckBig, LuPlus,
   LuPencil, LuHardHat, LuCircleAlert, LuTrash2, LuCircle, LuCalendar,
@@ -34,6 +36,7 @@ function Tasks() {
   const { projectId } = useParams()
   const navigate      = useNavigate()
   const { showToast } = useToast()
+  const confirm = useConfirm()
   const perms         = usePermissions()
 
   const [project, setProject]           = useState(null)
@@ -134,7 +137,10 @@ function Tasks() {
   }
 
   const handleDelete = async (id, title) => {
-    if (!confirm(`¿Eliminar tarea "${title}"?`)) return
+    const ok = await confirm(`Esta acción eliminará la tarea "${title}" de forma permanente.`, {
+      title: 'Eliminar tarea', confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
     setDeletingId(id)
     try {
       await axios.delete(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${id}`)
@@ -277,7 +283,7 @@ function Tasks() {
 
       {/* Lista de tareas */}
       {loading ? (
-        <p className="text-gray-400 text-sm">Cargando tareas...</p>
+        <LoadingState label="Cargando tareas..." />
       ) : filteredTasks.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
           <div className="flex justify-center mb-3 text-gray-500"><LuClipboardList size={40} /></div>

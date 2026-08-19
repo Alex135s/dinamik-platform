@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import { useConfirm } from '../context/ConfirmContext'
+import LoadingState from '../components/LoadingState'
 import { exportProjectsPDF, exportProjectsExcel } from '../utils/exportUtils'
 import Pagination from '../components/Pagination'
 import { usePermissions } from '../hooks/usePermissions'
@@ -52,6 +54,7 @@ const getAlertInfo = (endDate, status) => {
 
 function Projects() {
   const { showToast } = useToast()
+  const confirm = useConfirm()
   const perms          = usePermissions()
   const navigate       = useNavigate()
   const session        = JSON.parse(localStorage.getItem('dinamik_session') || '{}')
@@ -194,7 +197,10 @@ function Projects() {
   }
 
   const handleDelete = async (id, name) => {
-    if (!confirm(`¿Eliminar "${name}"?`)) return
+    const ok = await confirm(`Esta acción eliminará el proyecto "${name}" de forma permanente.`, {
+      title: 'Eliminar proyecto', confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
     setDeletingId(id)
     try {
       await axios.delete(`${import.meta.env.VITE_PROJECTS_API}/api/projects/${id}`)
@@ -447,7 +453,7 @@ function Projects() {
 
       {/* Lista / Cards */}
       {loading ? (
-        <p className="text-gray-400 text-sm">Cargando proyectos...</p>
+        <LoadingState label="Cargando proyectos..." />
       ) : filteredProjects.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
           <div className="flex justify-center mb-3 text-gray-500">

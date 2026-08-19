@@ -24,6 +24,7 @@ import WebContacto from './pages/WEB/WebContacto'
 import WebLayout from './layouts/WebLayout'
 import { ToastProvider } from './context/ToastContext'
 import { SettingsProvider } from './context/SettingsContext'
+import { ConfirmProvider } from './context/ConfirmContext'
 
 function RouteLoading() {
   return (
@@ -86,6 +87,7 @@ function App() {
   return (
     <SettingsProvider>
     <ToastProvider>
+    <ConfirmProvider>
     <BrowserRouter>
       <Suspense fallback={<RouteLoading />}>
       <Routes>
@@ -138,6 +140,7 @@ function App() {
       </Routes>
       </Suspense>
     </BrowserRouter>
+    </ConfirmProvider>
     </ToastProvider>
     </SettingsProvider>
   )

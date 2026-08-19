@@ -3,6 +3,8 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import { useConfirm } from '../context/ConfirmContext'
+import LoadingState from '../components/LoadingState'
 import {
   LuHardHat, LuSquare, LuSun, LuBrickWall, LuImages, LuUpload, LuX, LuPlus, LuEye, LuBan, LuTrash2,
 } from 'react-icons/lu'
@@ -67,6 +69,7 @@ function subirUna(file, title, category, onProgress) {
 
 function PortfolioAdmin() {
   const { showToast } = useToast()
+  const confirm = useConfirm()
 
   const [photos, setPhotos]       = useState([])
   const [loading, setLoading]     = useState(true)
@@ -135,7 +138,10 @@ function PortfolioAdmin() {
   }
 
   const deletePhoto = async (id) => {
-    if (!confirm('¿Quitar esta foto del portafolio?')) return
+    const ok = await confirm('Esta foto dejará de estar disponible en el portafolio público.', {
+      title: 'Quitar foto', confirmLabel: 'Quitar',
+    })
+    if (!ok) return
     try {
       await axios.delete(`${GALLERY_API}/api/gallery/${id}`)
       showToast('Foto eliminada.', 'success')
@@ -163,7 +169,10 @@ function PortfolioAdmin() {
   }
 
   const deleteAlbum = async (album) => {
-    if (!confirm(`¿Borrar el álbum "${album.title}" completo (${album.photos.length} fotos)?`)) return
+    const ok = await confirm(`Se eliminarán las ${album.photos.length} fotos del álbum "${album.title}" de forma permanente.`, {
+      title: 'Eliminar álbum', confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
     setBusyAlbum(album.title)
     try {
       for (const p of album.photos) {
@@ -332,7 +341,7 @@ function PortfolioAdmin() {
 
       {/* Álbumes */}
       {loading ? (
-        <p className="text-gray-400 text-sm">Cargando galería...</p>
+        <LoadingState label="Cargando galería..." />
       ) : albums.length === 0 ? (
         <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
           <div className="flex justify-center mb-3 text-gray-500"><LuImages size={40} /></div>

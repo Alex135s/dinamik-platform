@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
-import { LuPlus, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban } from 'react-icons/lu'
+import { useConfirm } from '../context/ConfirmContext'
+import LoadingState from '../components/LoadingState'
+import Pagination from '../components/Pagination'
+import { LuPlus, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban, LuSearch } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
 import { ROLES, roleLabels, roleColors } from '../constants/roles'
 
 const SEDES = ['Lima', 'Ica', 'Arequipa']
+const PAGE_SIZE = 10
 
 const emptyForm = { firstName: '', lastName: '', dni: '', email: '', password: '', role: 'tecnico', sede: '' }
 
 function Users() {
   const { showToast } = useToast()
+  const confirm = useConfirm()
   const [users, setUsers]           = useState([])
   const [projects, setProjects]     = useState([])
   const [loading, setLoading]       = useState(true)
@@ -18,6 +23,8 @@ function Users() {
   const [form, setForm]             = useState(emptyForm)
   const [deletingId, setDeletingId] = useState(null)
   const [searchingDni, setSearchingDni] = useState(false)
+  const [search, setSearch]         = useState('')
+  const [page, setPage]             = useState(1)
   // Usuario actual logueado
   const session = JSON.parse(localStorage.getItem('dinamik_session') || '{}')
 
@@ -104,6 +111,11 @@ function Users() {
   }
 
   const handleChangeRole = async (id, newRole, name) => {
+    const ok = await confirm(
+      `El rol de "${name}" cambiará a "${roleLabels[newRole] || newRole}". Esto afecta directamente sus permisos y accesos en el sistema.`,
+      { title: 'Cambiar rol', confirmLabel: 'Cambiar rol', danger: false }
+    )
+    if (!ok) return
     try {
       await axios.patch(`${import.meta.env.VITE_PROJECTS_API}/api/users/${id}/role`, { role: newRole })
       showToast(`Rol de "${name}" cambiado a ${roleLabels[newRole] || newRole}.`, 'success')
@@ -118,7 +130,10 @@ function Users() {
       showToast('No puedes eliminar tu propia cuenta.', 'warning')
       return
     }
-    if (!window.confirm(`¿Eliminar usuario "${name}"? Esta acción no se puede deshacer.`)) return
+    const ok = await confirm(`Esta acción eliminará al usuario "${name}" de forma permanente y no se puede deshacer.`, {
+      title: 'Eliminar usuario', confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
     setDeletingId(id)
     try {
       await axios.delete(`${import.meta.env.VITE_PROJECTS_API}/api/users/${id}`)
@@ -131,6 +146,12 @@ function Users() {
   }
 
   const proyectosDe = (userId) => projects.filter(p => p.assignedTo === userId)
+
+  const filteredUsers = users.filter(u =>
+    u.name?.toLowerCase().includes(search.toLowerCase()) ||
+    u.email?.toLowerCase().includes(search.toLowerCase())
+  )
+  const pagedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div>
@@ -213,12 +234,27 @@ function Users() {
         </div>
       )}
 
+      {/* Buscador */}
+      <div className="relative mb-4">
+        <LuSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          placeholder="Buscar por nombre o email..."
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1) }}
+          className="w-full bg-gray-800 text-white rounded-xl pl-9 pr-4 py-2.5 text-sm border border-gray-700 focus:border-orange-500 outline-none"
+        />
+      </div>
+
       {/* Lista */}
       {loading ? (
-        <p className="text-gray-400 text-sm">Cargando usuarios...</p>
+        <LoadingState label="Cargando usuarios..." />
+      ) : filteredUsers.length === 0 ? (
+        <div className="bg-gray-800 rounded-xl p-10 border border-gray-700 text-center">
+          <p className="text-gray-400 text-sm">No se encontraron usuarios.</p>
+        </div>
       ) : (
         <div className="grid gap-3">
-          {users.map(u => {
+          {pagedUsers.map(u => {
             const colors = roleColors[u.role] || { bg: 'bg-gray-500/20', text: 'text-gray-400' }
             const isMe = u.id === session.id
             const misProyectos = proyectosDe(u.id)
@@ -310,6 +346,15 @@ function Users() {
             )
           })}
         </div>
+      )}
+
+      {!loading && (
+        <Pagination
+          totalItems={filteredUsers.length}
+          itemsPerPage={PAGE_SIZE}
+          currentPage={page}
+          onPageChange={setPage}
+        />
       )}
     </div>
   )

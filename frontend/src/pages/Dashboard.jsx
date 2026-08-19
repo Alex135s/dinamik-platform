@@ -12,6 +12,8 @@ import {
   LuChartPie, LuArrowRight, LuTable2, LuListChecks, LuCalendarClock,
   LuBuilding2, LuFlag, LuHardHat, LuCuboid, LuMap, LuClipboardCheck,
 } from 'react-icons/lu'
+import { useToast } from '../context/ToastContext'
+import LoadingState from '../components/LoadingState'
 
 const statusColors = {
   activo:     { bg: 'bg-green-500/20',  text: 'text-green-400'  },
@@ -69,14 +71,29 @@ function SectionHeader({ icon: Icon, title, badge, action }) {
 
 function Dashboard() {
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [projects, setProjects] = useState([])
   const [docs, setDocs]         = useState([])
   const [tasks, setTasks]       = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [chartYear, setChartYear] = useState(new Date().getFullYear())
 
-  useEffect(() => {
-    axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects').then(res => setProjects(res.data))
-    axios.get('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents').then(res => setDocs(res.data))
-  }, [])
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      const [p, d] = await Promise.all([
+        axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects'),
+        axios.get('' + import.meta.env.VITE_DOCUMENTS_API + '/api/documents'),
+      ])
+      setProjects(p.data)
+      setDocs(d.data)
+    } catch {
+      showToast('Error al cargar los datos del dashboard.', 'error')
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchData() }, [])
 
   // Cargar tareas de todos los proyectos
   useEffect(() => {
@@ -85,7 +102,8 @@ function Dashboard() {
       projects.map(p => axios.get(`${import.meta.env.VITE_PROJECTS_API}/api/tasks/${p.id}`))
     ).then(results => {
       setTasks(results.flatMap((r, i) => r.data.map(t => ({ ...t, projectId: t.projectId || projects[i].id }))))
-    }).catch(() => {})
+    }).catch(() => showToast('Error al cargar las tareas.', 'error'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects])
 
   // ── Estadísticas ────────────────────────────────────────
@@ -136,9 +154,16 @@ function Dashboard() {
   })).filter(d => d.total > 0)
 
   // ── Gráfico línea ───────────────────────────────────────
+  const añosDisponibles = Array.from(new Set(
+    projects.filter(p => p.createdAt).map(p => new Date(p.createdAt).getFullYear())
+  )).sort((a, b) => b - a)
+  if (!añosDisponibles.includes(chartYear)) añosDisponibles.unshift(chartYear)
+
   const conteoPorMes = Array(12).fill(0)
   projects.forEach(p => {
-    if (p.createdAt) conteoPorMes[new Date(p.createdAt).getMonth()]++
+    if (p.createdAt && new Date(p.createdAt).getFullYear() === chartYear) {
+      conteoPorMes[new Date(p.createdAt).getMonth()]++
+    }
   })
   const dataLinea = MESES.map((mes, i) => ({ mes, proyectos: conteoPorMes[i] }))
 
@@ -163,6 +188,16 @@ function Dashboard() {
       return new Date(a.dueDate) - new Date(b.dueDate)
     })
     .slice(0, 8)
+
+  if (loading) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>
+        <p className="text-gray-400 text-sm mb-8">Resumen general de proyectos DINAMIK</p>
+        <LoadingState label="Cargando dashboard..." />
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -374,8 +409,18 @@ function Dashboard() {
 
       {/* Línea */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-8">
-        <h3 className="text-white font-semibold mb-1">Proyectos Registrados por Mes</h3>
-        <p className="text-gray-500 text-xs mb-4">Año {new Date().getFullYear()}</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-white font-semibold mb-1">Proyectos Registrados por Mes</h3>
+            <p className="text-gray-500 text-xs">Año {chartYear}</p>
+          </div>
+          <select
+            value={chartYear}
+            onChange={e => setChartYear(Number(e.target.value))}
+            className="bg-gray-700 text-white text-sm rounded-lg px-3 py-1.5 border border-gray-600 focus:border-orange-500 outline-none">
+            {añosDisponibles.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={dataLinea}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
