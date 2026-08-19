@@ -1,5 +1,5 @@
 import { blueprintGrid, statusInfo } from './portalData'
-import { LuWrench, LuCalendar, LuHardHat } from 'react-icons/lu'
+import { LuWrench, LuCalendar, LuHardHat, LuMessageCircle } from 'react-icons/lu'
 
 function ProjectHero({ project }) {
   const st = statusInfo[project.status] || statusInfo.activo
@@ -26,6 +26,14 @@ function ProjectHero({ project }) {
         <span className="flex items-center gap-1.5 text-orange-50 text-xs">
           <LuHardHat size={13} /> {project.assignedToName ? `Ingeniero: ${project.assignedToName}` : 'Ingeniero sin asignar'}
         </span>
+        {project.assignedToName && project.assignedToPhone && (
+          <a
+            href={`https://wa.me/${project.assignedToPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${project.assignedToName}, soy cliente del proyecto ${project.name} (${project.projectCode}).`)}`}
+            target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-white text-xs bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-full transition-colors">
+            <LuMessageCircle size={12} /> Contactar al ingeniero
+          </a>
+        )}
       </div>
     </div>
   )

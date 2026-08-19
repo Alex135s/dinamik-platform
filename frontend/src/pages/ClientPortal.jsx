@@ -47,7 +47,8 @@ function ClientPortal() {
     ])
     setDocs(docsRes.data.filter(d => d.enabled))
     setAllDocs(docsRes.data)
-    setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : [])
+    const allTasks = Array.isArray(tasksRes.data) ? tasksRes.data : []
+    setTasks(allTasks.filter(t => t.visibleToClient !== false))
   }
 
   const handleLogin = async (codeOverride) => {

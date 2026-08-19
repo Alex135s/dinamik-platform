@@ -219,7 +219,7 @@ app.MapGet("/api/projects", async () =>
         @"SELECT p.id, p.name, p.client, p.service_type, p.status, p.start_date,
                  p.created_at, p.project_code, p.whatsapp, p.end_date, p.progress, p.assigned_to,
                  p.location, p.latitude, p.longitude, p.client_doc_type, p.client_doc_number,
-                 u.name, p.client_id, c.email
+                 u.name, p.client_id, c.email, u.phone
           FROM projects p
           LEFT JOIN users u ON u.id = p.assigned_to
           LEFT JOIN clients c ON c.id = p.client_id
@@ -249,6 +249,7 @@ app.MapGet("/api/projects", async () =>
             assignedToName  = reader.IsDBNull(17) ? null : reader.GetString(17),
             clientId        = reader.IsDBNull(18) ? null : reader.GetGuid(18).ToString(),
             clientEmail     = reader.IsDBNull(19) ? null : reader.GetString(19),
+            assignedToPhone = reader.IsDBNull(20) ? null : reader.GetString(20),
         });
     }
     return Results.Ok(projects);
@@ -463,7 +464,7 @@ app.MapGet("/api/users", async () =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        @"SELECT id, name, email, role, created_at, first_name, last_name, dni, sede, firebase_uid
+        @"SELECT id, name, email, role, created_at, first_name, last_name, dni, sede, firebase_uid, phone
           FROM users ORDER BY created_at DESC", conn);
     await using var reader = await cmd.ExecuteReaderAsync();
     while (await reader.ReadAsync())
@@ -478,6 +479,7 @@ app.MapGet("/api/users", async () =>
             dni            = reader.IsDBNull(7) ? null : reader.GetString(7),
             sede           = reader.IsDBNull(8) ? null : reader.GetString(8),
             firebaseLinked = !reader.IsDBNull(9),
+            phone          = reader.IsDBNull(10) ? null : reader.GetString(10),
         });
     return Results.Ok(users);
 });
@@ -499,18 +501,32 @@ app.MapPost("/api/users", async (UserRequest req) =>
     if (count > 0)
         return Results.BadRequest(new { error = "El email ya está registrado." });
     await using var cmd = new NpgsqlCommand(
-        @"INSERT INTO users (name, first_name, last_name, email, password, role, dni, sede)
-          VALUES (@name, @firstName, @lastName, @email, @password, @role, @dni, @sede) RETURNING id", conn);
+        @"INSERT INTO users (name, first_name, last_name, email, password, role, dni, sede, phone)
+          VALUES (@name, @firstName, @lastName, @email, @password, @role, @dni, @sede, @phone) RETURNING id", conn);
     cmd.Parameters.AddWithValue("name",      name);
     cmd.Parameters.AddWithValue("firstName", req.FirstName.Trim());
     cmd.Parameters.AddWithValue("lastName",  req.LastName.Trim());
     cmd.Parameters.AddWithValue("email",     req.Email);
     cmd.Parameters.AddWithValue("password",  (object?)req.Password ?? DBNull.Value);
     cmd.Parameters.AddWithValue("role",      req.Role ?? "tecnico");
-    cmd.Parameters.AddWithValue("dni",       (object?)req.Dni  ?? DBNull.Value);
-    cmd.Parameters.AddWithValue("sede",      (object?)req.Sede ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("dni",       (object?)req.Dni   ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("sede",      (object?)req.Sede  ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("phone",     (object?)req.Phone ?? DBNull.Value);
     var id = await cmd.ExecuteScalarAsync();
     return Results.Ok(new { id });
+});
+
+// PATCH editar teléfono de un usuario
+app.MapPatch("/api/users/{id}/phone", async (string id, PhoneRequest req) =>
+{
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    await using var cmd = new NpgsqlCommand(
+        "UPDATE users SET phone = @phone WHERE id = @id", conn);
+    cmd.Parameters.AddWithValue("phone", (object?)req.Phone ?? DBNull.Value);
+    cmd.Parameters.AddWithValue("id",    Guid.Parse(id));
+    await cmd.ExecuteNonQueryAsync();
+    return Results.Ok(new { success = true });
 });
 
 // POST login de técnico/admin con Google (Firebase Auth) — el correo debe coincidir
@@ -733,21 +749,22 @@ app.MapGet("/api/tasks/{projectId}", async (string projectId) =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        @"SELECT id, project_id, title, description, status, priority, assigned_to, due_date, created_at
+        @"SELECT id, project_id, title, description, status, priority, assigned_to, due_date, created_at, visible_to_client
           FROM tasks WHERE project_id = @projectId ORDER BY created_at DESC", conn);
     cmd.Parameters.AddWithValue("projectId", Guid.Parse(projectId));
     await using var reader = await cmd.ExecuteReaderAsync();
     while (await reader.ReadAsync())
         tasks.Add(new {
-            id          = reader.GetGuid(0),
-            projectId   = reader.GetGuid(1),
-            title       = reader.GetString(2),
-            description = reader.IsDBNull(3) ? null : reader.GetString(3),
-            status      = reader.IsDBNull(4) ? null : reader.GetString(4),
-            priority    = reader.IsDBNull(5) ? null : reader.GetString(5),
-            assignedTo  = reader.IsDBNull(6) ? null : reader.GetString(6),
-            dueDate     = reader.IsDBNull(7) ? null : reader.GetDateTime(7).ToString("yyyy-MM-dd"),
-            createdAt   = reader.GetDateTime(8)
+            id              = reader.GetGuid(0),
+            projectId       = reader.GetGuid(1),
+            title           = reader.GetString(2),
+            description     = reader.IsDBNull(3) ? null : reader.GetString(3),
+            status          = reader.IsDBNull(4) ? null : reader.GetString(4),
+            priority        = reader.IsDBNull(5) ? null : reader.GetString(5),
+            assignedTo      = reader.IsDBNull(6) ? null : reader.GetString(6),
+            dueDate         = reader.IsDBNull(7) ? null : reader.GetDateTime(7).ToString("yyyy-MM-dd"),
+            createdAt       = reader.GetDateTime(8),
+            visibleToClient = reader.GetBoolean(9),
         });
     return Results.Ok(tasks);
 });
@@ -758,8 +775,8 @@ app.MapPost("/api/tasks", async (TaskRequest req) =>
     await using var conn = new NpgsqlConnection(connStr);
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
-        @"INSERT INTO tasks (project_id, title, description, status, priority, assigned_to, due_date)
-          VALUES (@projectId, @title, @description, @status, @priority, @assignedTo, @dueDate)
+        @"INSERT INTO tasks (project_id, title, description, status, priority, assigned_to, due_date, visible_to_client)
+          VALUES (@projectId, @title, @description, @status, @priority, @assignedTo, @dueDate, @visibleToClient)
           RETURNING id", conn);
     cmd.Parameters.AddWithValue("projectId",   Guid.Parse(req.ProjectId));
     cmd.Parameters.AddWithValue("title",       req.Title);
@@ -768,6 +785,7 @@ app.MapPost("/api/tasks", async (TaskRequest req) =>
     cmd.Parameters.AddWithValue("priority",    req.Priority    ?? "media");
     cmd.Parameters.AddWithValue("assignedTo",  req.AssignedTo  ?? (object)DBNull.Value);
     cmd.Parameters.AddWithValue("dueDate",     req.DueDate.HasValue ? req.DueDate.Value : DBNull.Value);
+    cmd.Parameters.AddWithValue("visibleToClient", req.VisibleToClient ?? true);
     var id = await cmd.ExecuteScalarAsync();
 
     // Recalcular progreso del proyecto (una tarea nueva baja el % si no está completada)
@@ -802,7 +820,7 @@ app.MapPut("/api/tasks/{id}", async (string id, TaskRequest req) =>
     await conn.OpenAsync();
     await using var cmd = new NpgsqlCommand(
         @"UPDATE tasks SET title=@title, description=@description, status=@status,
-            priority=@priority, assigned_to=@assignedTo, due_date=@dueDate
+            priority=@priority, assigned_to=@assignedTo, due_date=@dueDate, visible_to_client=@visibleToClient
           WHERE id=@id", conn);
     cmd.Parameters.AddWithValue("id",          Guid.Parse(id));
     cmd.Parameters.AddWithValue("title",       req.Title);
@@ -811,6 +829,7 @@ app.MapPut("/api/tasks/{id}", async (string id, TaskRequest req) =>
     cmd.Parameters.AddWithValue("priority",    req.Priority    ?? "media");
     cmd.Parameters.AddWithValue("assignedTo",  req.AssignedTo  ?? (object)DBNull.Value);
     cmd.Parameters.AddWithValue("dueDate",     req.DueDate.HasValue ? req.DueDate.Value : DBNull.Value);
+    cmd.Parameters.AddWithValue("visibleToClient", req.VisibleToClient ?? true);
     await cmd.ExecuteNonQueryAsync();
 
     // Recalcular progreso del proyecto (función reutilizable)
@@ -1068,10 +1087,11 @@ record ProjectRequest(string Name, string? Client, string? ServiceType, string? 
 record ClientRequest(string? Name, string? Tipo, string? DocType, string? DocNumber, string? Email);
 record LoginRequest(string Email, string Password);
 record TokenRequest(string Token);
-record UserRequest(string FirstName, string LastName, string Email, string? Password, string? Role, string? Dni, string? Sede);
+record UserRequest(string FirstName, string LastName, string Email, string? Password, string? Role, string? Dni, string? Sede, string? Phone);
+record PhoneRequest(string? Phone);
 record GoogleAuthRequest(string IdToken);
 record RoleRequest(string Role);
-record TaskRequest(string ProjectId, string Title, string? Description, string? Status, string? Priority, string? AssignedTo, DateOnly? DueDate);
+record TaskRequest(string ProjectId, string Title, string? Description, string? Status, string? Priority, string? AssignedTo, DateOnly? DueDate, bool? VisibleToClient);
 record TaskStatusRequest(string Status);
 
 record ChatRequest(List<ChatMessage> Messages, bool WithContext, string? ProjectCode);

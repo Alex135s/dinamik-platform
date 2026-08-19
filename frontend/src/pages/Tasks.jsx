@@ -31,7 +31,7 @@ const priorityIcons = { baja: LuCircle, media: LuCircle, alta: LuCircle }
 
 const emptyForm = {
   title: '', description: '', status: 'pendiente',
-  priority: 'media', assignedTo: '', dueDate: ''
+  priority: 'media', assignedTo: '', dueDate: '', visibleToClient: true,
 }
 
 function Tasks() {
@@ -87,6 +87,7 @@ function Tasks() {
       priority:    t.priority    || 'media',
       assignedTo:  t.assignedTo  || '',
       dueDate:     t.dueDate     || '',
+      visibleToClient: t.visibleToClient !== false,
     })
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -120,6 +121,7 @@ function Tasks() {
           priority:    form.priority,
           assignedTo:  form.assignedTo || null,
           dueDate:     form.dueDate    || null,
+          visibleToClient: form.visibleToClient,
         })
         showToast('Tarea actualizada correctamente.', 'success')
       } else {
@@ -131,6 +133,7 @@ function Tasks() {
           priority:    form.priority,
           assignedTo:  form.assignedTo || null,
           dueDate:     form.dueDate    || null,
+          visibleToClient: form.visibleToClient,
         })
         showToast('Tarea creada correctamente.', 'success')
       }
@@ -293,6 +296,12 @@ function Tasks() {
                 onChange={e => setForm({ ...form, dueDate: e.target.value })}
                 className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
             </div>
+            <label className="col-span-2 flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+              <input type="checkbox" checked={form.visibleToClient}
+                onChange={e => setForm({ ...form, visibleToClient: e.target.checked })}
+                className="accent-orange-500 w-4 h-4" />
+              Visible para el cliente en el portal
+            </label>
           </div>
           <div className="flex gap-3 mt-4">
             <button onClick={handleSubmit}
@@ -340,6 +349,12 @@ function Tasks() {
                       {isVencida && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 flex items-center gap-1">
                           <LuCircleAlert size={11} /> Vencida
+                        </span>
+                      )}
+                      {t.visibleToClient === false && (
+                        <span title="El cliente no ve esta tarea en el portal"
+                          className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">
+                          Interna
                         </span>
                       )}
                     </div>

@@ -5,14 +5,14 @@ import { useConfirm } from '../context/ConfirmContext'
 import LoadingState from '../components/LoadingState'
 import Pagination from '../components/Pagination'
 import { exportUsersPDF, exportUsersExcel } from '../utils/exportUtils'
-import { LuPlus, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban, LuSearch, LuFileText, LuFileSpreadsheet } from 'react-icons/lu'
+import { LuPlus, LuTrash2, LuIdCard, LuMapPin, LuFolderKanban, LuSearch, LuFileText, LuFileSpreadsheet, LuPhone, LuPencil, LuCheck, LuX } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
 import { ROLES, roleLabels, roleColors } from '../constants/roles'
 
 const SEDES = ['Lima', 'Ica', 'Arequipa']
 const PAGE_SIZE = 10
 
-const emptyForm = { firstName: '', lastName: '', dni: '', email: '', password: '', role: 'tecnico', sede: '' }
+const emptyForm = { firstName: '', lastName: '', dni: '', email: '', password: '', role: 'tecnico', sede: '', phone: '' }
 
 function Users() {
   const { showToast } = useToast()
@@ -26,6 +26,9 @@ function Users() {
   const [searchingDni, setSearchingDni] = useState(false)
   const [search, setSearch]         = useState('')
   const [page, setPage]             = useState(1)
+  const [editingPhoneId, setEditingPhoneId] = useState(null)
+  const [phoneDraft, setPhoneDraft] = useState('')
+  const [savingPhone, setSavingPhone] = useState(false)
   // Usuario actual logueado
   const session = JSON.parse(localStorage.getItem('dinamik_session') || '{}')
 
@@ -100,6 +103,7 @@ function Users() {
         role:      form.role,
         dni:       form.dni || null,
         sede:      form.sede || null,
+        phone:     form.phone || null,
       })
       showToast(`Usuario "${form.firstName} ${form.lastName}" creado correctamente.`, 'success')
       setForm(emptyForm)
@@ -123,6 +127,27 @@ function Users() {
       fetchUsers()
     } catch {
       showToast('Error al cambiar el rol.', 'error')
+    }
+  }
+
+  const startEditPhone = (u) => {
+    setEditingPhoneId(u.id)
+    setPhoneDraft(u.phone || '')
+  }
+
+  const cancelEditPhone = () => { setEditingPhoneId(null); setPhoneDraft('') }
+
+  const saveEditPhone = async (id) => {
+    setSavingPhone(true)
+    try {
+      await axios.patch(`${import.meta.env.VITE_PROJECTS_API}/api/users/${id}/phone`, { phone: phoneDraft.trim() || null })
+      showToast('Teléfono actualizado.', 'success')
+      cancelEditPhone()
+      fetchUsers()
+    } catch {
+      showToast('Error al actualizar el teléfono.', 'error')
+    } finally {
+      setSavingPhone(false)
     }
   }
 
@@ -211,6 +236,9 @@ function Users() {
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
             <input placeholder="Contraseña (opcional si ingresará con Google)" type="password" value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
+              className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
+            <input placeholder="Teléfono (opcional)" value={form.phone}
+              onChange={e => setForm({ ...form, phone: e.target.value })}
               className="bg-gray-700 text-white rounded-lg px-4 py-2 text-sm border border-gray-600 focus:border-orange-500 outline-none" />
 
             <select value={form.role}
@@ -302,6 +330,23 @@ function Users() {
                         )}
                         {u.sede && (
                           <span className="text-gray-500 text-xs flex items-center gap-1"><LuMapPin size={12} /> {u.sede}</span>
+                        )}
+                        {editingPhoneId === u.id ? (
+                          <span className="flex items-center gap-1">
+                            <input autoFocus value={phoneDraft}
+                              onChange={e => setPhoneDraft(e.target.value)}
+                              placeholder="Teléfono"
+                              className="bg-gray-700 text-white text-xs rounded px-2 py-0.5 border border-gray-600 focus:border-orange-500 outline-none w-28" />
+                            <button onClick={() => saveEditPhone(u.id)} disabled={savingPhone} aria-label="Guardar teléfono"
+                              className="text-green-400 hover:text-green-300"><LuCheck size={13} /></button>
+                            <button onClick={cancelEditPhone} aria-label="Cancelar"
+                              className="text-gray-500 hover:text-gray-300"><LuX size={13} /></button>
+                          </span>
+                        ) : (
+                          <button onClick={() => startEditPhone(u)}
+                            className="text-gray-500 hover:text-orange-400 text-xs flex items-center gap-1 transition-colors">
+                            <LuPhone size={12} /> {u.phone || 'Agregar teléfono'} <LuPencil size={10} />
+                          </button>
                         )}
                         <span className="text-gray-500 text-xs">
                           Registrado: {new Date(u.createdAt).toLocaleDateString('es-PE', {
