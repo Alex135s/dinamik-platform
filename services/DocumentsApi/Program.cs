@@ -3,6 +3,13 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// En contenedores (Render, etc.) el límite de inotify watches del host suele
+// agotarse; por defecto .NET vigila appsettings.json para recargarlo en
+// caliente, algo que esta API no necesita en producción. Lo desactivamos
+// para que un arranque no se caiga por falta de inotify watches disponibles.
+foreach (var jsonSource in builder.Configuration.Sources.OfType<Microsoft.Extensions.Configuration.Json.JsonConfigurationSource>())
+    jsonSource.ReloadOnChange = false;
+
 // Puerto: en la nube (Render) se toma de la variable PORT; en local se usa el de siempre.
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
