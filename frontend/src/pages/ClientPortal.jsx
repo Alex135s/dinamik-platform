@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '../firebase'
 import AuthSplitPanel from '../components/AuthSplitPanel'
 import Chatbot from '../components/Chatbot'
 import PDFViewerProtected from '../components/PDFViewerProtected'
-import { isPDF } from '../components/portal/portalData'
+import { isPDF, isNew } from '../components/portal/portalData'
 import ProjectHero from '../components/portal/ProjectHero'
 import StatsRow from '../components/portal/StatsRow'
 import Timeline from '../components/portal/Timeline'
@@ -13,8 +13,10 @@ import Deliverables from '../components/portal/Deliverables'
 import ServicesGrid from '../components/portal/ServicesGrid'
 import Sidebar from '../components/portal/Sidebar'
 import { getInitials } from '../components/portal/portalData'
-import { LuX, LuLogOut, LuArrowLeft, LuArrowRight, LuFolderKanban } from 'react-icons/lu'
+import { LuX, LuLogOut, LuArrowLeft, LuArrowRight, LuFolderKanban, LuBell } from 'react-icons/lu'
 import { FcGoogle } from 'react-icons/fc'
+
+const PORTAL_CODE_KEY = 'dinamik_portal_code'
 
 function ClientPortal() {
   const [code, setCode]             = useState('')
@@ -24,6 +26,7 @@ function ClientPortal() {
   const [tasks, setTasks]           = useState([])
   const [error, setError]           = useState('')
   const [loading, setLoading]       = useState(false)
+  const [restoring, setRestoring]   = useState(true)
   const [loadingGoogle, setLoadingGoogle] = useState(false)
   const [pdfViewer, setPdfViewer]   = useState(null)
   const [previewImg, setPreviewImg] = useState(null)
@@ -47,27 +50,46 @@ function ClientPortal() {
     setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : [])
   }
 
-  const handleLogin = async () => {
-    if (!code.trim()) return
+  const handleLogin = async (codeOverride) => {
+    const codeToUse = (codeOverride ?? code).trim()
+    if (!codeToUse) return
     setLoading(true)
     setError('')
     try {
       const res = await axios.get('' + import.meta.env.VITE_PROJECTS_API + '/api/projects')
       const found = res.data.find(
-        p => p.projectCode?.toUpperCase() === code.toUpperCase().trim()
+        p => p.projectCode?.toUpperCase() === codeToUse.toUpperCase()
       )
       if (!found) {
         setError('Código de proyecto no válido. Verifique e intente nuevamente.')
+        localStorage.removeItem(PORTAL_CODE_KEY)
         setLoading(false)
         return
       }
       await loadProjectData(found)
+      localStorage.setItem(PORTAL_CODE_KEY, codeToUse.toUpperCase())
     } catch {
       setError('Error al conectar. Intente nuevamente.')
     } finally {
       setLoading(false)
     }
   }
+
+  // Restaurar sesión guardada (login por código) para que no se pierda al refrescar
+  const restoreSession = async () => {
+    const savedCode = localStorage.getItem(PORTAL_CODE_KEY)
+    if (savedCode) {
+      setCode(savedCode)
+      await handleLogin(savedCode)
+    }
+    setRestoring(false)
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    restoreSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleGoogleLogin = async () => {
     setError('')
@@ -135,6 +157,7 @@ function ClientPortal() {
   }
 
   const handleLogout = () => {
+    localStorage.removeItem(PORTAL_CODE_KEY)
     setProject(null); setCode(''); setDocs([]); setAllDocs([]); setTasks([])
     setClientProjects(null); setClientName('')
     setShowSignup(false); setSignupDone(false); setSignupForm({ name: '', email: '' })
@@ -232,6 +255,15 @@ function ClientPortal() {
     )
   }
 
+  // ── Restaurando sesión guardada ──────────────────────
+  if (restoring) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <img src="/logo-light.png" alt="DINAMIK" className="h-9 w-auto object-contain animate-pulse" />
+      </div>
+    )
+  }
+
   // ── Pantalla de ingreso ──────────────────────────────
   if (!project) {
     return (
@@ -263,7 +295,7 @@ function ClientPortal() {
             />
           </div>
           {error && <p className="text-red-500 text-xs">{error}</p>}
-          <button onClick={handleLogin} disabled={loading}
+          <button onClick={() => handleLogin()} disabled={loading}
             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-sm shadow-lg shadow-orange-500/25 transition">
             {loading ? 'Verificando...' : 'Ingresar al Portal'}
           </button>
@@ -279,6 +311,7 @@ function ClientPortal() {
   }
 
   const docsDeshabilitados = allDocs.filter(d => !d.enabled && isPDF(d.type))
+  const docsNuevos = docs.filter(d => isNew(d.uploadedAt))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -291,6 +324,18 @@ function ClientPortal() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {docsNuevos.length > 0 && (
+            <button
+              onClick={() => document.getElementById('entregables')?.scrollIntoView({ behavior: 'smooth' })}
+              title={`${docsNuevos.length} documento(s) nuevo(s)`}
+              aria-label={`${docsNuevos.length} documento(s) nuevo(s)`}
+              className="relative w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors">
+              <LuBell size={17} />
+              <span className="absolute -top-0.5 -right-0.5 bg-orange-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {docsNuevos.length}
+              </span>
+            </button>
+          )}
           <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-full py-1 pl-1 pr-3">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               {getInitials(project.client)}

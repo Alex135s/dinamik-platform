@@ -682,6 +682,25 @@ app.MapPut("/api/clients/{id}", async (string id, ClientRequest req) =>
     return Results.Ok(new { success = true });
 });
 
+// DELETE cliente (solo si no tiene proyectos asociados)
+app.MapDelete("/api/clients/{id}", async (string id) =>
+{
+    await using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+
+    await using var countCmd = new NpgsqlCommand(
+        "SELECT COUNT(*) FROM projects WHERE client_id = @id", conn);
+    countCmd.Parameters.AddWithValue("id", Guid.Parse(id));
+    var projectCount = (long)(await countCmd.ExecuteScalarAsync() ?? 0L);
+    if (projectCount > 0)
+        return Results.BadRequest(new { error = "No se puede eliminar: el cliente tiene proyectos asociados." });
+
+    await using var cmd = new NpgsqlCommand("DELETE FROM clients WHERE id = @id", conn);
+    cmd.Parameters.AddWithValue("id", Guid.Parse(id));
+    await cmd.ExecuteNonQueryAsync();
+    return Results.Ok(new { success = true });
+});
+
 // PATCH cambiar rol
 app.MapPatch("/api/users/{id}/role", async (string id, RoleRequest req) =>
 {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
@@ -37,6 +37,7 @@ const emptyForm = {
 function Tasks() {
   const { projectId } = useParams()
   const navigate      = useNavigate()
+  const location      = useLocation()
   const { showToast } = useToast()
   const confirm = useConfirm()
   const perms         = usePermissions()
@@ -90,6 +91,19 @@ function Tasks() {
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  // Si venimos del Detalle del proyecto pidiendo crear/editar una tarea directamente
+  useEffect(() => {
+    if (tasks.length === 0 && !location.state?.openNew) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (location.state?.openNew) openNew()
+    else if (location.state?.editTaskId) {
+      const target = tasks.find(t => t.id === location.state.editTaskId)
+      if (target) openEdit(target)
+    }
+    if (location.state) navigate(location.pathname, { replace: true, state: null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, location.state])
 
   const handleSubmit = async () => {
     if (!form.title.trim()) {

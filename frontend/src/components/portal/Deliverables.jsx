@@ -4,7 +4,7 @@ import { LuInbox, LuEye, LuLock } from 'react-icons/lu'
 
 function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
   return (
-    <div>
+    <div id="entregables">
       <Eyebrow>Entregables</Eyebrow>
       <h3 className="text-gray-900 font-bold text-lg mb-4 -mt-2">
         Documentos disponibles

@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useToast } from '../context/ToastContext'
+import { useConfirm } from '../context/ConfirmContext'
 import ShareProjectCode from '../components/ShareProjectCode'
 import {
   LuSearch, LuHardHat, LuCuboid, LuMap, LuClipboardCheck, LuBuilding2, LuCircleCheckBig,
   LuCircleAlert, LuFlag, LuCalendar, LuClipboardList, LuFolder, LuFileText, LuPencilRuler,
-  LuPaperclip, LuDownload, LuArrowLeft, LuMapPin, LuX, LuPencil,
+  LuPaperclip, LuDownload, LuArrowLeft, LuMapPin, LuX, LuPencil, LuPlus, LuTrash2,
+  LuUpload, LuEye, LuBan,
 } from 'react-icons/lu'
 import { usePermissions } from '../hooks/usePermissions'
 import LoadingState from '../components/LoadingState'
@@ -47,6 +49,7 @@ function ProjectDetail() {
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const confirm = useConfirm()
   const perms = usePermissions()
 
   const [project, setProject]     = useState(null)
@@ -92,6 +95,43 @@ function ProjectDetail() {
     }
     load()
   }, [projectId])
+
+  const handleDeleteTask = async (task) => {
+    const ok = await confirm(`Esta acción eliminará la tarea "${task.title}" de forma permanente.`, {
+      title: 'Eliminar tarea', confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
+    try {
+      await axios.delete(`${API}/api/tasks/${task.id}`)
+      setTasks(prev => prev.filter(t => t.id !== task.id))
+      showToast('Tarea eliminada.', 'success')
+    } catch {
+      showToast('Error al eliminar la tarea.', 'error')
+    }
+  }
+
+  const handleToggleDoc = async (doc) => {
+    try {
+      await axios.patch(`${DOCS_API}/api/documents/${doc.id}/toggle`, { enabled: !doc.enabled })
+      setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, enabled: !d.enabled } : d))
+    } catch {
+      showToast('Error al cambiar el estado.', 'error')
+    }
+  }
+
+  const handleDeleteDoc = async (doc) => {
+    const ok = await confirm(`Esta acción eliminará el documento "${doc.name}" de forma permanente.`, {
+      title: 'Eliminar documento', confirmLabel: 'Eliminar',
+    })
+    if (!ok) return
+    try {
+      await axios.delete(`${DOCS_API}/api/documents/${doc.id}`)
+      setDocuments(prev => prev.filter(d => d.id !== doc.id))
+      showToast('Documento eliminado.', 'success')
+    } catch {
+      showToast('Error al eliminar el documento.', 'error')
+    }
+  }
 
   // ── Cálculos derivados ──────────────────────────────
   const completadas = tasks.filter(t => t.status === 'completado').length
@@ -216,10 +256,18 @@ function ProjectDetail() {
       <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold">Tareas ({tasks.length})</h2>
-          <button onClick={() => navigate(`/projects/${projectId}/tasks`)}
-            className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-            <LuClipboardList size={14} /> Gestionar tareas
-          </button>
+          <div className="flex items-center gap-2">
+            {perms.tasks.canCreate && (
+              <button onClick={() => navigate(`/projects/${projectId}/tasks`, { state: { openNew: true } })}
+                className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
+                <LuPlus size={14} /> Nueva Tarea
+              </button>
+            )}
+            <button onClick={() => navigate(`/projects/${projectId}/tasks`)}
+              className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+              <LuClipboardList size={14} /> Gestionar tareas
+            </button>
+          </div>
         </div>
         {tasks.length === 0 ? (
           <p className="text-gray-500 text-sm">No hay tareas registradas.</p>
@@ -245,6 +293,20 @@ function ProjectDetail() {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${taskStatusColors[task.status] || 'bg-gray-500/20 text-gray-300'}`}>
                     {task.status || '—'}
                   </span>
+                  {perms.tasks.canCreate && (
+                    <button onClick={() => navigate(`/projects/${projectId}/tasks`, { state: { editTaskId: task.id } })}
+                      aria-label={`Editar tarea ${task.title}`}
+                      className="text-gray-500 hover:text-blue-400 transition-colors">
+                      <LuPencil size={13} />
+                    </button>
+                  )}
+                  {perms.tasks.canDelete && (
+                    <button onClick={() => handleDeleteTask(task)}
+                      aria-label={`Eliminar tarea ${task.title}`}
+                      className="text-gray-500 hover:text-red-400 transition-colors">
+                      <LuTrash2 size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -256,10 +318,18 @@ function ProjectDetail() {
       <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold">Documentos ({documents.length})</h2>
-          <button onClick={() => navigate('/documents')}
-            className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
-            <LuFolder size={14} /> Gestionar documentos
-          </button>
+          <div className="flex items-center gap-2">
+            {perms.documents.canUpload && (
+              <button onClick={() => navigate('/documents', { state: { uploadProjectId: projectId } })}
+                className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
+                <LuUpload size={14} /> Subir Documento
+              </button>
+            )}
+            <button onClick={() => navigate('/documents')}
+              className="flex items-center gap-1.5 bg-gray-700 hover:bg-orange-500/20 hover:text-orange-400 text-gray-400 text-xs px-3 py-1.5 rounded-lg transition-colors">
+              <LuFolder size={14} /> Gestionar documentos
+            </button>
+          </div>
         </div>
         {documents.length === 0 ? (
           <p className="text-gray-500 text-sm">No hay documentos para este proyecto.</p>
@@ -282,12 +352,29 @@ function ProjectDetail() {
                     </p>
                   </div>
                 </div>
-                {doc.fileUrl && (
-                  <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors flex-shrink-0 ml-3">
-                    <LuDownload size={13} /> Abrir
-                  </a>
-                )}
+                <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                  {doc.fileUrl && (
+                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 bg-gray-700 hover:bg-blue-500/20 hover:text-blue-400 text-gray-300 text-xs px-3 py-1.5 rounded-lg transition-colors">
+                      <LuDownload size={13} /> Abrir
+                    </a>
+                  )}
+                  {perms.documents.canToggle && (
+                    <button onClick={() => handleToggleDoc(doc)}
+                      title={doc.enabled ? 'Ocultar documento' : 'Mostrar documento'}
+                      aria-label={doc.enabled ? 'Ocultar documento' : 'Mostrar documento'}
+                      className="text-gray-500 hover:text-gray-300 transition-colors">
+                      {doc.enabled ? <LuEye size={14} /> : <LuBan size={14} />}
+                    </button>
+                  )}
+                  {perms.documents.canDelete && (
+                    <button onClick={() => handleDeleteDoc(doc)}
+                      aria-label={`Eliminar documento ${doc.name}`}
+                      className="text-gray-500 hover:text-red-400 transition-colors">
+                      <LuTrash2 size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
               )
             })}

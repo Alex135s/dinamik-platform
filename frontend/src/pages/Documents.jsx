@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { storage } from '../firebase'
 import axios from 'axios'
@@ -40,6 +41,8 @@ function Documents() {
   const { showToast } = useToast()
   const confirm        = useConfirm()
   const perms         = usePermissions()
+  const location      = useLocation()
+  const navigate      = useNavigate()
   const session       = JSON.parse(localStorage.getItem('dinamik_session') || '{}')
 
   const [projects, setProjects]         = useState([])
@@ -193,6 +196,20 @@ function Documents() {
     setForm({ name: '', projectId: p.id, type: 'plano_pdf' })
     setShowForm(false)
   }
+
+  // Si venimos del Detalle del proyecto pidiendo subir un documento directamente
+  useEffect(() => {
+    const uploadProjectId = location.state?.uploadProjectId
+    if (!uploadProjectId || projects.length === 0) return
+    const target = projects.find(p => p.id === uploadProjectId)
+    if (target) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      openProject(target)
+      setShowForm(true)
+    }
+    navigate(location.pathname, { replace: true, state: null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, location.state])
 
   const isImage = (type) => type === 'imagen_3d' || type === 'foto'
   const isPDF   = (type) => type === 'plano_pdf' || type === 'informe'
