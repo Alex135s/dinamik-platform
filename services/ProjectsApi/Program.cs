@@ -1076,14 +1076,19 @@ REGLAS:
 
         var resp = await httpGroq.SendAsync(httpReq);
         if (!resp.IsSuccessStatusCode)
+        {
+            var errorBody = await resp.Content.ReadAsStringAsync();
+            Console.WriteLine($"[Groq] {(int)resp.StatusCode} {resp.StatusCode}: {errorBody}");
             return Results.Ok(new { reply = "❌ La IA no respondió correctamente. Revisa la API key o tu cuota de Groq." });
+        }
 
         var json  = await resp.Content.ReadFromJsonAsync<JsonElement>();
         var reply = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
         return Results.Ok(new { reply });
     }
-    catch
+    catch (Exception ex)
     {
+        Console.WriteLine($"[Groq] Excepción al conectar: {ex}");
         return Results.Ok(new { reply = "❌ No pude conectarme con la IA. Intenta de nuevo en un momento." });
     }
 });
