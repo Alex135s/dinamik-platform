@@ -13,7 +13,7 @@ function ServicesGrid({ onRequest }) {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {SERVICIOS.map((s, i) => (
-          <div key={i} onClick={onRequest}
+          <div key={i} onClick={() => onRequest(`Quisiera solicitar información sobre ${s.title}.`)}
             className={`bg-white rounded-2xl p-5 border border-gray-100 cursor-pointer transition-all group shadow-sm hover:shadow-lg ${s.hover}`}>
             <div className="flex items-start justify-between mb-3">
               <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${s.iconBg}`}>

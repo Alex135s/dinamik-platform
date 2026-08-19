@@ -20,7 +20,7 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
         </div>
       ) : (
         <div className="mb-8">
-          {['plano_pdf', 'plano_cad', 'imagen_3d', 'informe', 'otro'].map(tipo => {
+          {['plano_pdf', 'plano_cad', 'imagen_3d', 'foto', 'informe', 'otro'].map(tipo => {
             const grupo = docs.filter(d => d.type === tipo)
             if (grupo.length === 0) return null
             const TypeIcon = typeIcons[tipo]
@@ -35,7 +35,7 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
                       className={`bg-white rounded-2xl px-5 py-4 border flex items-center justify-between shadow-sm hover:shadow-md transition-shadow
                         ${isNew(d.uploadedAt) ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-100'}`}>
                       <div className="flex items-center gap-3 min-w-0">
-                        {tipo === 'imagen_3d' && d.fileUrl ? (
+                        {(tipo === 'imagen_3d' || tipo === 'foto') && d.fileUrl ? (
                           <img src={d.fileUrl} alt={d.name}
                             className="w-11 h-11 object-cover rounded-xl border border-gray-200 cursor-pointer flex-shrink-0"
                             onClick={() => onImg(d)} />
@@ -70,7 +70,7 @@ function Deliverables({ docs, docsDeshabilitados, onPdf, onImg }) {
                             <LuEye size={13} /> Ver PDF
                           </button>
                         )}
-                        {tipo === 'imagen_3d' && d.fileUrl && (
+                        {(tipo === 'imagen_3d' || tipo === 'foto') && d.fileUrl && (
                           <button onClick={() => onImg(d)}
                             className="flex items-center gap-1.5 bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-600 text-xs px-3 py-2 rounded-lg transition-colors border border-gray-200">
                             <LuEye size={13} /> Ver

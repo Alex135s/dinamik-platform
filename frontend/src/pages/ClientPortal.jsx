@@ -148,12 +148,11 @@ function ClientPortal() {
     }
   }
 
-  const handleWhatsapp = () => {
+  const handleWhatsapp = (context) => {
     const number = project?.whatsapp?.replace(/\D/g, '') || '51962744341'
-    window.open(
-      `https://wa.me/${number}?text=Hola, soy cliente del proyecto ${project?.name} (${project?.projectCode}). Necesito soporte.`,
-      '_blank'
-    )
+    const text = `Hola, soy cliente del proyecto ${project?.name} (${project?.projectCode}). ` +
+      (context || 'Necesito soporte.')
+    window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, '_blank')
   }
 
   const handleLogout = () => {

@@ -1,22 +1,33 @@
 import Eyebrow from './Eyebrow'
+import { useToast } from '../../context/ToastContext'
 import { LuDownload, LuMessageCircle, LuClipboardList, LuTarget, LuCircleCheckBig, LuMapPin, LuPhone, LuMail } from 'react-icons/lu'
 
 const EMPRESA = {
   direccion: 'Av. República de Chile 478, Jesús María, Lima',
   telefono:  '+51 962 744 341',
-  correo:    'contacto@dinamik.com',
+  correo:    'dinamiksac@gmail.com',
 }
 
 function Sidebar({ docs, tasks, onWhatsapp }) {
+  const { showToast } = useToast()
+
   // Próximo hito = primera tarea no completada (en orden cronológico)
   const cronologico = [...tasks].reverse()
   const proximo = cronologico.find(t => t.status !== 'completado')
 
-  // Descargar todo: abre cada entregable en una pestaña nueva
+  // Descargar todo: abre cada entregable en una pestaña nueva.
+  // El navegador solo deja pasar la primera si se abren varias de golpe,
+  // así que avisamos si detectamos que bloqueó el resto.
   const descargarTodo = () => {
     const conUrl = docs.filter(d => d.fileUrl)
     if (conUrl.length === 0) return
-    conUrl.forEach(d => window.open(d.fileUrl, '_blank'))
+    const bloqueados = conUrl.filter(d => !window.open(d.fileUrl, '_blank')).length
+    if (bloqueados > 0) {
+      showToast(
+        `Tu navegador bloqueó ${bloqueados} de ${conUrl.length} archivos. Permite las ventanas emergentes para este sitio e inténtalo de nuevo.`,
+        'warning'
+      )
+    }
   }
 
   const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(EMPRESA.direccion)}&z=15&output=embed`
@@ -32,11 +43,11 @@ function Sidebar({ docs, tasks, onWhatsapp }) {
             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-40 text-white py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm shadow-orange-500/20 transition">
             <LuDownload size={15} /> Descargar todo {docs.length > 0 && `(${docs.length})`}
           </button>
-          <button onClick={onWhatsapp}
+          <button onClick={() => onWhatsapp()}
             className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm shadow-green-500/20 transition">
             <LuMessageCircle size={15} /> WhatsApp
           </button>
-          <button onClick={onWhatsapp}
+          <button onClick={() => onWhatsapp('Quisiera solicitar una cotización.')}
             className="w-full bg-white hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border border-gray-200 transition">
             <LuClipboardList size={15} /> Solicitar Cotización
           </button>

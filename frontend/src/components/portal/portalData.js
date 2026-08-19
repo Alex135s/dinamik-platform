@@ -1,18 +1,19 @@
 // Datos y helpers compartidos del portal del cliente
 import {
-  LuFileText, LuPencilRuler, LuCuboid, LuClipboardList, LuPaperclip,
+  LuFileText, LuPencilRuler, LuCuboid, LuClipboardList, LuPaperclip, LuCamera,
   LuHardHat, LuSearch, LuBuilding2, LuRuler,
   LuActivity, LuLoader, LuCircleCheckBig,
 } from 'react-icons/lu'
 
 export const typeIcons = {
-  plano_pdf: LuFileText, plano_cad: LuPencilRuler, imagen_3d: LuCuboid, informe: LuClipboardList, otro: LuPaperclip,
+  plano_pdf: LuFileText, plano_cad: LuPencilRuler, imagen_3d: LuCuboid, foto: LuCamera, informe: LuClipboardList, otro: LuPaperclip,
 }
 
 export const typeLabels = {
   plano_pdf: 'Planos PDF',
   plano_cad: 'Planos CAD/DWG',
   imagen_3d: 'Imágenes 3D',
+  foto:      'Avance de Obra',
   informe:   'Informes Técnicos',
   otro:      'Otros',
 }
@@ -21,6 +22,7 @@ export const typeAccent = {
   plano_pdf: 'bg-red-100 text-red-600',
   plano_cad: 'bg-blue-100 text-blue-600',
   imagen_3d: 'bg-purple-100 text-purple-600',
+  foto:      'bg-amber-100 text-amber-600',
   informe:   'bg-green-100 text-green-600',
   otro:      'bg-gray-100 text-gray-500',
 }
